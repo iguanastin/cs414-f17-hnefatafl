@@ -1,0 +1,14 @@
+- Domain model:
+  - "Player" CC should have email attribute
+  - "Invitation" should be conceptual class. Attributes/associations TBD
+  - Upper limit on multiplicity number between "Player" and "Piece" (as a player can only have a max of 24 pieces
+    (black at the beginning)). I believe there's notation for representing this within UML
+ 
+- Use Case Diagram:
+  - Add "Log-In" to diagram. I thought we had this as a use case, but maybe not.
+  - There should be two actors: registered user and unregistered user. 
+  
+- General:
+  - No more hats during presentation.
+  - Our presentations need to be better rehearsed before hand.
+  - Email client regarding what she would like a "game history" to include (winner, loser, date, ending position, etc.?)
