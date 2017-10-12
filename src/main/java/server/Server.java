@@ -1,5 +1,11 @@
 package server;
 
+import common.ClientDisconnectEvent;
+import common.ConnectAcceptedEvent;
+import common.HeartbeatEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -22,32 +28,44 @@ public class Server extends AbstractServer {
 
     private final ArrayList<ConnectionToClient> connections = new ArrayList<>();
 
+    final Logger logger = LoggerFactory.getLogger(Server.class);
+
 
     public Server(int port) throws SQLException {
         super(port);
 
+        log("Creating server on port: " + port + "...");
+
+        log("Initializing database ocnnection...");
         dbConnection = DriverManager.getConnection("jdbc:h2:" + DB_PATH);
         if (!isDatabaseInitialized()) initDatabaseTables();
 
         try {
             listen();
+            log("Listening for connections...");
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        log("Initializing heartbeat thread...");
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                for (Thread thread : getClientConnections()) {
-                    try {
-                        //TODO: Implement heartbeat event sending
-//                        ((ConnectionToClient) thread).sendToClient(new HeartbeatEvent());
-                        ((ConnectionToClient) thread).sendToClient("hearbeat");
-                    } catch (IOException e) {
-                        try {
-                            ((ConnectionToClient) thread).close();
-                        } catch (IOException e1) {
-                            e1.printStackTrace();
+                if (!connections.isEmpty()) {
+                    log("Sending hearbeat to " + connections.size() + " connections...");
+
+                    synchronized (connections) {
+                        for (ConnectionToClient client : connections) {
+                            try {
+                                client.sendToClient(new HeartbeatEvent());
+                            } catch (IOException e) {
+                                logClient(client, "Failed heartbeat. Disconnecting");
+                                try {
+                                    client.close();
+                                } catch (IOException e1) {
+                                    e1.printStackTrace();
+                                }
+                            }
                         }
                     }
                 }
@@ -77,31 +95,54 @@ public class Server extends AbstractServer {
         s.close();
     }
 
-    public static void main(String[] args) throws SQLException {
-        Server server = new Server(45454);
-    }
-
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-        System.out.println(msg);
+        logClient(client, msg);
+
+        if (msg instanceof ClientDisconnectEvent) {
+            clientDisconnected(client);
+        }
     }
 
     @Override
-    protected void clientConnected(ConnectionToClient client) {
-        System.out.println(client.getInetAddress().getHostAddress() + ": connected");
-        connections.add(client);
+    protected synchronized void clientConnected(ConnectionToClient client) {
+        logClient(client, "Connected");
+        synchronized (connections) {
+            connections.add(client);
+        }
+
+        try {
+            client.sendToClient(new ConnectAcceptedEvent());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
-        System.out.println(client.getInetAddress().getHostAddress() + ": disconnected");
-        connections.remove(client);
+        logClient(client, "Disconnected");
+        synchronized (connections) {
+            connections.remove(client);
+        }
     }
 
     @Override
     protected synchronized void clientException(ConnectionToClient client, Throwable exception) {
-        System.out.println(client.getInetAddress().getHostAddress() + ": threw exception");
-        exception.printStackTrace();
+        logClient(client, "Threw exception: " + exception.getLocalizedMessage());
+        clientDisconnected(client);
+    }
+
+    private void logClient(ConnectionToClient client, Object msg) {
+        log("[" + client + "]: " + msg);
+    }
+
+    private void log(String msg) {
+        logger.info(msg);
+    }
+
+    public static void main(String[] args) throws SQLException {
+        final int port = 54321;
+        new Server(port);
     }
 
 }

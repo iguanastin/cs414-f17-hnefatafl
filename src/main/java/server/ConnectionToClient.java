@@ -59,6 +59,11 @@ public class ConnectionToClient extends Thread {
     private boolean readyToStop;
 
     /**
+     * The address of this client connection
+     */
+    private String address;
+
+    /**
      * Map to save information about the client such as its login ID. The
      * initial size of the map is small since it is not expected that concrete
      * servers will want to store many different types of information about each
@@ -81,6 +86,7 @@ public class ConnectionToClient extends Thread {
         super(group, (Runnable) null);
         // Initialize variables
         this.clientSocket = clientSocket;
+        this.address = clientSocket.getInetAddress().getHostAddress();
         this.server = server;
 
         clientSocket.setSoTimeout(0); // make sure timeout is infinite
@@ -159,8 +165,7 @@ public class ConnectionToClient extends Thread {
      * @return the client's description.
      */
     public String toString() {
-        return clientSocket == null ? null : clientSocket.getInetAddress().getHostName() + " ("
-                + clientSocket.getInetAddress().getHostAddress() + ")";
+        return getAddress();
     }
 
     /**
@@ -184,6 +189,14 @@ public class ConnectionToClient extends Thread {
         return savedInfo.get(infoType);
     }
 
+    /**
+     *
+     * @return The address of this client connection
+     */
+    public String getAddress() {
+        return address;
+    }
+
     // RUN METHOD -------------------------------------------------------
 
     /**
@@ -191,8 +204,6 @@ public class ConnectionToClient extends Thread {
      * read to the server. Not to be called.
      */
     final public void run() {
-        server.clientConnected(this);
-
         // This loop reads the input stream and responds to messages
         // from clients
         try {
