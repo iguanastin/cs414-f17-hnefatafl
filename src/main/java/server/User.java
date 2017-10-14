@@ -75,4 +75,13 @@ public class User {
         return getClient() != null;
     }
 
+    @Override
+    public String toString() {
+        if (isLoggedIn()) {
+            return "[" + getName() + "-" + getClient() + "]";
+        } else {
+            return "[" + getName() + "-Offline]";
+        }
+    }
+
 }
