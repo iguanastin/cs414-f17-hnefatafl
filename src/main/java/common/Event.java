@@ -1,7 +1,6 @@
 package common;
 
-public abstract class Event extends Message {
+import java.io.Serializable;
 
-
-
+public abstract class Event implements Serializable {
 }
