@@ -20,7 +20,7 @@ public class BoardTest {
 				if (i == 5 && j == 5) {
 					assert tiles[5][5].getType().equals(TileType.THRONE);
 				}
-				else if((i == 0 || i == 10) && (j == 0 || j == 10)) {
+				else if(i == 0 || i == 10 || j == 0 || j == 10) {
 					assert tiles[i][j].getType().equals(TileType.GOAL);
 				}
 				else {
