@@ -1,5 +1,8 @@
 package Game;
 
+enum TileType {
+	NORMAL, THRONE, GOAL
+}
 public class Tile {
 	//type is NORMAL, THRONE, or GOAL
 	private TileType type;
@@ -7,9 +10,14 @@ public class Tile {
 	private boolean hasPiece;
 	//Contains piece placed on this tile
 	private Piece piece;
+	//Contains location of this tile
+	private int x;
+	private int y;
 	
-	public Tile(TileType type) {
+	public Tile(TileType type, int x, int y) {
 		this.type = type;
+		this.x = x;
+		this.y = y;
 	}
 	public TileType getType() {
 		return type;
@@ -31,7 +39,13 @@ public class Tile {
 		this.piece = null;
 		hasPiece = false;
 	}
+	public int getX() {
+		return x;
+	}
+	public int getY() {
+		return y;
+	}
 	public String toString() {
-		return "" + type;
+		return "(" + x + ", " + y + ")";
 	}
 }

@@ -32,19 +32,21 @@ public class Board {
 		}
 	}
 	public void initializeTiles() {
-		//Fill the board with normal tiles
 		for (int i = 0; i < 11; i++) {
-			for (int j = 0; j < 11; j++) {
-				tiles[i][j] = new Tile(TileType.NORMAL);
+			//Place the goal tiles
+			tiles[0][i] = new Tile(TileType.GOAL, 0, i);
+			tiles[10][i] = new Tile(TileType.GOAL, 10, i);
+			tiles[i][0] = new Tile(TileType.GOAL, i, 0);
+			tiles[i][10] = new Tile(TileType.GOAL, i , 10);
+		}
+		//Fill the remain space with normal tiles
+		for (int i = 1; i < 10; i++) {
+			for (int j = 1; j < 10; j++) {
+				tiles[i][j] = new Tile(TileType.NORMAL, i, j);
 			}
 		}
-		//Place the goal tiles
-		tiles[0][0] = new Tile(TileType.GOAL);
-		tiles[10][0] = new Tile(TileType.GOAL);
-		tiles[0][10] = new Tile(TileType.GOAL);
-		tiles[10][10] = new Tile(TileType.GOAL);
 		//Place the throne tile
-		tiles[5][5] = new Tile(TileType.THRONE);
+		tiles[5][5] = new Tile(TileType.THRONE, 5, 5);
 	}
 	public void initializeAttack(User attacker) {
 		//initialize outer attackers
@@ -79,18 +81,18 @@ public class Board {
 		String toStr = "Tiles:\n";
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
-				toStr += tiles[i][j] + " ";
+				toStr += tiles[j][i] + " ";
 			}
 			toStr += "\n";
 		}
 		toStr += "Pieces:\n";
 		for (int i = 0; i < height; i++) {
 			for (int j = 0; j < width; j++) {
-				if (tiles[i][j].hasPiece()) {
-					if (tiles[i][j].getPiece().isKing()) {
+				if (tiles[j][i].hasPiece()) {
+					if (tiles[j][i].getPiece().isKing()) {
 						toStr += "K ";
 					}
-					else if (tiles[i][j].getPiece().getColor().equals(Color.BLACK)){
+					else if (tiles[j][i].getPiece().getColor().equals(Color.BLACK)){
 						toStr += "B ";
 					}
 					else {
@@ -104,12 +106,5 @@ public class Board {
 			toStr += "\n";
 		}
 		return toStr;
-	}
-	public static void main(String[] args) {
-		Board board = new Board(11,11);
-		User attacker = new User("attacker");
-		User defender = new User("defender");
-		board.initialize(attacker, defender);
-		System.out.println(board);
 	}
 }

@@ -1,5 +1,8 @@
 package Game;
 
+enum Color {
+	BLACK, WHITE
+}
 public class Piece {
 	//Contains owner of piece
 	private User user;
