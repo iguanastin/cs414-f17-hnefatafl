@@ -292,11 +292,9 @@ public abstract class AbstractServer implements Runnable {
                     // When a client is accepted, create a thread to handle
                     // the data exchange, then add it to thread group
 
-                    synchronized (this) {
-                        ConnectionToClient c = new ConnectionToClient(
-                                this.clientThreadGroup, clientSocket, this);
-                        clientConnected(c);
-                    }
+                    ConnectionToClient c = new ConnectionToClient(
+                            this.clientThreadGroup, clientSocket, this);
+                    clientConnected(c);
                 } catch (InterruptedIOException exception) {
                     // This will be thrown when a timeout occurs.
                     // The server will continue to listen if not ready to stop.
@@ -327,7 +325,7 @@ public abstract class AbstractServer implements Runnable {
      *
      * @param client the connection connected to the client.
      */
-    protected void clientConnected(ConnectionToClient client) {
+    protected synchronized void clientConnected(ConnectionToClient client) {
     }
 
     /**
