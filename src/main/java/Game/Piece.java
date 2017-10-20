@@ -1,5 +1,7 @@
 package Game;
 
+import server.User;
+
 enum Color {
 	BLACK, WHITE
 }

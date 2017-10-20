@@ -1,5 +1,7 @@
 package Game;
 
+import server.User;
+
 public class Board {
 	//Contains all the board's tiles, which contain pieces.
 	private Tile[][] tiles;
