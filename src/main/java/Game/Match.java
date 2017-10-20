@@ -1,6 +1,9 @@
 package Game;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+
+import server.User;
 enum MatchStatus{
 	ATTACKER_TURN, DEFENDER_TURN, ATTACKER_WIN, DEFENDER_WIN, DRAW_GAME
 }
@@ -124,7 +127,9 @@ public class Match {
 		}
 		return availableMoves;
 	}
-	public void makeMove(Tile fromTile, Tile toTile) {
+	//Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
+	public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
+		HashSet<Tile> capturedTiles = new HashSet<Tile>();
 		Piece toMove = fromTile.getPiece();
 		fromTile.removePiece();
 		toTile.setPiece(toMove);
@@ -134,11 +139,13 @@ public class Match {
 		}
 		else {
 			//Captures any pieces available for capture by this move
-			capture(toTile);
+			capturedTiles = capture(toTile);
 		}
+		return capturedTiles;
 	}
 	//Processes capturing performed by a piece, called by makeMove
-	private void capture(Tile capturerTile) {
+	private HashSet<Tile> capture(Tile capturerTile) {
+		HashSet<Tile> capturedTiles = new HashSet<Tile>();
 		int x = capturerTile.getX();
 		int y = capturerTile.getY();
 		Tile[][] tiles = board.getTiles();
@@ -155,10 +162,15 @@ public class Match {
 							if(!(tiles[x][y-2].getPiece().isKing())){
 								//Perform additional calculations if piece to be captured is a king
 								if(tiles[x][y-1].getPiece().isKing()) {
-									kingCapture(tiles[x][y-1]);
+									//kingCaptured attempts to capture the king.
+									if(kingCapture(tiles[x+1][y])) {
+										//If king was successfully captured
+										capturedTiles.add(tiles[x][y-1]);
+									}
 								}
 								//Capture the piece
 								else {
+									capturedTiles.add(tiles[x][y-1]);
 									tiles[x][y-1].removePiece();
 								}
 							}
@@ -180,10 +192,15 @@ public class Match {
 							if(!(tiles[x][y+2].getPiece().isKing())){
 								//Perform additional calculations if piece to be captured is a king
 								if(tiles[x][y+1].getPiece().isKing()) {
-									kingCapture(tiles[x][y+1]);
+									//kingCaptured attempts to capture the king.
+									if(kingCapture(tiles[x][y+1])) {
+										//If king was successfully captured
+										capturedTiles.add(tiles[x][y+1]);
+									}
 								}
 								//Capture the piece
 								else {
+									capturedTiles.add(tiles[x][y+1]);
 									tiles[x][y+1].removePiece();
 								}
 							}
@@ -205,10 +222,15 @@ public class Match {
 							if(!(tiles[x-2][y].getPiece().isKing())){
 								//Perform additional calculations if piece to be captured is a king
 								if(tiles[x-1][y].getPiece().isKing()) {
-									kingCapture(tiles[x-1][y]);
+									//kingCaptured attempts to capture the king.
+									if(kingCapture(tiles[x-1][y])) {
+										//If king was successfully captured
+										capturedTiles.add(tiles[x-1][y]);
+									}
 								}
 								//Capture the piece
 								else {
+									capturedTiles.add(tiles[x-1][y]);
 									tiles[x-1][y].removePiece();
 								}
 							}
@@ -230,10 +252,15 @@ public class Match {
 							if(!(tiles[x+2][y].getPiece().isKing())){
 								//Perform additional calculations if piece to be captured is a king
 								if(tiles[x+1][y].getPiece().isKing()) {
-									kingCapture(tiles[x+1][y]);
+									//kingCaptured attempts to capture the king.
+									if(kingCapture(tiles[x+1][y])) {
+										//If king was successfully captured
+										capturedTiles.add(tiles[x+1][y]);
+									}
 								}
 								//Capture the piece
 								else {
+									capturedTiles.add(tiles[x+1][y]);
 									tiles[x+1][y].removePiece();
 								}
 							}
@@ -242,9 +269,10 @@ public class Match {
 				}
 			}
 		}
+		return capturedTiles;
 	}
-	//Captures the king if surrounded
-	private void kingCapture(Tile kingTile) {
+	//Captures the king if surrounded.  Returns true is king was captured, false otherwise.
+	private boolean kingCapture(Tile kingTile) {
 		//If above, below, left, and right are all true, the king is surrounded and captured.
 		boolean above = false;
 		boolean below = false;
@@ -312,6 +340,8 @@ public class Match {
 		if(above && below && left && right) {
 			kingTile.removePiece();
 			status = MatchStatus.ATTACKER_WIN;
+			return true;
 		}
+		return false;
 	}
 }
