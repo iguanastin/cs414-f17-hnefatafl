@@ -19,6 +19,10 @@ public class User {
     private String password;
     //TODO: Make password hashed and salted
 
+    private int id;
+    private String email;
+    private boolean unregistered = false;
+
 
     /**
      * Constructs a user object to represent a user in the system with a given set of credentials.
@@ -26,9 +30,16 @@ public class User {
      * @param name Unique name of the user
      * @param password Password for this account
      */
-    public User(String name, String password) {
+    public User(int id, String email, String name, String password) {
+        this.id = id;
+        this.email = email;
         this.name = name;
         this.password = password;
+    }
+
+    public User(int id, String email, String name, String password, boolean unregistered) {
+        this(id, email, name, password);
+        this.unregistered = unregistered;
     }
 
     /**
@@ -78,10 +89,29 @@ public class User {
     @Override
     public String toString() {
         if (isLoggedIn()) {
-            return "[" + getName() + "-" + getClient() + "]";
+            return "[" + getId() + "-" + getName() + "-" + getClient() + "]";
         } else {
-            return "[" + getName() + "-Offline]";
+            return "[" + getId() + "-" + getName() + "-Offline]";
         }
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public boolean isUnregistered() {
+        return unregistered;
+    }
+
+    public void unregister() {
+        unregistered = true;
+    }
+
+    public String getPassword() {
+        return password;
+    }
 }

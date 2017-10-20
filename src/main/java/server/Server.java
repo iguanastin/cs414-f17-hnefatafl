@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -18,11 +15,15 @@ public class Server extends AbstractServer {
     /**
      * SQL Statement to create the users table
      */
-    private static final String CREATE_USERS_TABLE = "CREATE TABLE users(id INT AUTO_INCREMENT NOT NULL PRIMARY KEY, name NVARCHAR(20) NOT NULL UNIQUE, pass NVARCHAR(20) NOT NULL);";
+    private static final String CREATE_USERS_TABLE = "CREATE TABLE users(id INT PRIMARY KEY AUTO_INCREMENT, name NVARCHAR(20) NOT NULL UNIQUE, email NVARCHAR(64) NOT NULL, pass NVARCHAR(64) NOT NULL, deleted BOOL DEFAULT FALSE);";
     /**
      * SQL Statement to create the games table
      */
-    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1 INT, p2 INT, result INT NOT NULL, winner INT NOT NULL, started LONG NOT NULL, ended LONG, turn INT NOT NULL, CONSTRAINT fk_p1 FOREIGN KEY (p1) REFERENCES users(id), CONSTRAINT fk_p2 FOREIGN KEY (p2) REFERENCES users(id), CONSTRAINT fk_winner FOREIGN KEY (winner) REFERENCES users(id));";
+    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1 FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2 FOREIGN KEY (p2_id) REFERENCES users(id));";
+    /**
+     * SQL Statement to create the boards table
+     */
+    private static final String CREATE_BOARDS_TABLE = "CREATE TABLE boards(id INT PRIMARY KEY AUTO_INCREMENT);";
 
     /**
      * SQL Statement to drop the users table
@@ -32,6 +33,10 @@ public class Server extends AbstractServer {
      * SQL Statement to drop the games table
      */
     private static final String DROP_GAMES_TABLE = "DROP TABLE IF EXISTS games;";
+    /**
+     * SQL Statement to drop the boards table
+     */
+    private static final String DROP_BOARDS_TABLE = "DROP TABLE IF EXISTS boards;";
 
     /**
      * SQL Database connection to the database
@@ -69,10 +74,6 @@ public class Server extends AbstractServer {
         super(port);
         log("Creating server on port: " + port + "...");
 
-        log("Initializing database ocnnection...");
-        dbConnection = DriverManager.getConnection("jdbc:h2:" + DB_PATH);
-        if (!isDatabaseInitialized()) initDatabaseTables();
-
         try {
             listen();
             log("Listening for connections...");
@@ -80,7 +81,81 @@ public class Server extends AbstractServer {
             e.printStackTrace();
         }
 
+        connectToDB();
+
         initHeartbeatThread();
+    }
+
+    /**
+     * Connects to the database and initializes it if necessary. Loads users, boards, games, etc. from db.
+     *
+     * @throws SQLException If the database is already in use or encounters an error otherwise.
+     */
+    private void connectToDB() throws SQLException {
+        log("Initializing database ocnnection...");
+        dbConnection = DriverManager.getConnection("jdbc:h2:" + DB_PATH);
+        if (!isDatabaseInitialized()) initDatabaseTables();
+
+        try (Statement s = dbConnection.createStatement()) {
+            ResultSet rs = s.executeQuery("SELECT * FROM users;");
+            while (rs.next()) {
+                users.add(new User(rs.getInt("id"), rs.getNString("email"), rs.getNString("name"), rs.getNString("pass"), rs.getBoolean("deleted")));
+            }
+            s.close();
+        } catch (SQLException e) {
+            logger.error("Error initial data from db", e);
+        }
+    }
+
+    /**
+     * Commits any changes made to a User object to the database
+     *
+     * @param user User to be committed to the database
+     */
+    private void commitChangedUser(User user) {
+        log("Committing changed user: " + user);
+        try (PreparedStatement s = dbConnection.prepareStatement("UPDATE users SET name=?, email=?, pass=?, deleted=? WHERE id=?;")) {
+            s.setNString(1, user.getName());
+            s.setNString(2, user.getEmail());
+            s.setNString(3, user.getPassword());
+            s.setBoolean(4, user.isUnregistered());
+            s.setInt(5, user.getId());
+            s.executeUpdate();
+            s.close();
+        } catch (SQLException e) {
+            logger.error("Error committing user changes to db", e);
+        }
+    }
+
+    /**
+     * Creates a User with the given info and commits them to the database.
+     *
+     * @param email     User's email
+     * @param name      Unique username
+     * @param password  Salted+Hashed password ready to be stored in the db
+     * @return          A user created with the information provided. Null if there was an error creating the user in the database
+     */
+    private User createUser(String email, String name, String password) {
+        log("Creating new User: " + name);
+        try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
+            s.setNString(1, name);
+            s.setNString(2, email);
+            s.setNString(3, password);
+            s.executeUpdate();
+            s.close();
+
+            PreparedStatement ps = dbConnection.prepareStatement("SELECT * FROM users WHERE name=?");
+            ps.setNString(1, name);
+            ResultSet rs = ps.executeQuery();
+            rs.next();
+            User user = new User(rs.getInt("id"), rs.getNString("email"), rs.getNString("name"), rs.getNString("pass"), rs.getBoolean("deleted"));
+            users.add(user);
+            ps.close();
+            return user;
+        } catch (SQLException e) {
+            logger.error("Error creating new user", e);
+            return null;
+        }
     }
 
     /**
@@ -122,6 +197,7 @@ public class Server extends AbstractServer {
         try (Statement s = dbConnection.createStatement()) {
             s.executeQuery("SELECT * FROM users;");
             s.executeQuery("SELECT * FROM games;");
+            s.executeQuery("SELECT * FROM boards;");
             return true;
         } catch (Exception e) {
             return false;
@@ -141,6 +217,9 @@ public class Server extends AbstractServer {
 
         s.executeUpdate(DROP_GAMES_TABLE);
         s.executeUpdate(CREATE_GAMES_TABLE);
+
+        s.executeUpdate(DROP_BOARDS_TABLE);
+        s.executeUpdate(CREATE_BOARDS_TABLE);
 
         s.close();
     }
