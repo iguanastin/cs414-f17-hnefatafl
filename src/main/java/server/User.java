@@ -19,8 +19,19 @@ public class User {
     private String password;
     //TODO: Make password hashed and salted
 
+    /**
+     * Unique ID associated with this user
+     */
     private int id;
+
+    /**
+     * Email for this user
+     */
     private String email;
+
+    /**
+     * Whether or not this user account has been unregistered
+     */
     private boolean unregistered = false;
 
 
@@ -37,6 +48,15 @@ public class User {
         this.password = password;
     }
 
+    /**
+     * Instantiates a User with the given information
+     *
+     * @param id           Unique ID
+     * @param email        User's email
+     * @param name         Name of user
+     * @param password     User password
+     * @param unregistered Whether or not this user account is unregistered
+     */
     public User(int id, String email, String name, String password, boolean unregistered) {
         this(id, email, name, password);
         this.unregistered = unregistered;
@@ -86,6 +106,10 @@ public class User {
         return getClient() != null;
     }
 
+    /**
+     *
+     * @return Simple string representation of this object
+     */
     @Override
     public String toString() {
         if (isLoggedIn()) {
@@ -95,27 +119,53 @@ public class User {
         }
     }
 
+    /**
+     *
+     * @return This user's unique ID
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     *
+     * @return This user's email
+     */
     public String getEmail() {
         return email;
     }
 
+    /**
+     *
+     * @return True if this user account has been unregistered and is no longer active
+     */
     public boolean isUnregistered() {
         return unregistered;
     }
 
+    /**
+     * Unregisters this user account, making it unable to be used, permanently.
+     */
     public void unregister() {
         unregistered = true;
     }
 
+    /**
+     *
+     * @return The salted/hashed password for this user
+     */
     public String getPassword() {
         return password;
     }
-    
-    public boolean equals(User user) {
-    	return id == user.getId();
+
+    /**
+     * Tests equality of this user and another user via their unique IDs
+     *
+     * @param obj Object to compare to
+     * @return True if obj is a User object with the same ID as this user
+     */
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof User && id == ((User) obj).getId();
     }
 }

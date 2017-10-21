@@ -1,5 +1,6 @@
 package server;
 
+import Game.Match;
 import common.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,11 @@ public class Server extends AbstractServer {
     private final ArrayList<User> users = new ArrayList<>();
 
     /**
+     * List of all matches currently in progress
+     */
+    private final ArrayList<Match> matches = new ArrayList<>();
+
+    /**
      * The SLF4J logger used to log debug/info/errors for this server.
      */
     private final Logger logger = LoggerFactory.getLogger(Server.class);
@@ -72,11 +78,11 @@ public class Server extends AbstractServer {
      */
     public Server(int port) throws SQLException {
         super(port);
-        log("Creating server on port: " + port + "...");
+        logger.info("Creating server on port: " + port + "...");
 
         try {
             listen();
-            log("Listening for connections...");
+            logger.info("Listening for connections...");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -87,12 +93,69 @@ public class Server extends AbstractServer {
     }
 
     /**
+     * Attempts to start a match between two given users
+     *
+     * @param player1 The user who initiates the match
+     * @param player2 The user who accepts the match
+     * @return True if the match was initialized, false if there is already a match in progress between these two users
+     */
+    private boolean startMatch(User player1, User player2) {
+        synchronized (matches) {
+            if (getMatch(player1.getId(), player2.getId()) == null) {
+                Match match = new Match(player1.getId(), player2.getId());
+                matches.add(match);
+
+                //Notify users
+                if (player1.isLoggedIn()) {
+                    try {
+                        player1.getClient().sendToClient(new MatchStartEvent(match));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (player2.isLoggedIn()) {
+                    try {
+                        player2.getClient().sendToClient(new MatchStartEvent(match));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Finds an active match between two given users
+     *
+     * @param p1id ID of a user
+     * @param p2id ID of a different user
+     * @return Null if p1id==p2id or no match currently exists between the two users
+     */
+    private Match getMatch(final int p1id, final int p2id) {
+        if (p1id == p2id) return null;
+
+        synchronized (matches) {
+            for (Match match : matches) {
+                final int a = match.getAttacker();
+                final int d = match.getDefender();
+                if ((a == p1id && d == p2id) || (a == p2id && d == p1id)) return match;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Connects to the database and initializes it if necessary. Loads users, boards, games, etc. from db.
      *
      * @throws SQLException If the database is already in use or encounters an error otherwise.
      */
     private void connectToDB() throws SQLException {
-        log("Initializing database ocnnection...");
+        logger.info("Initializing database ocnnection...");
         dbConnection = DriverManager.getConnection("jdbc:h2:" + DB_PATH);
         if (!isDatabaseInitialized()) initDatabaseTables();
 
@@ -113,7 +176,7 @@ public class Server extends AbstractServer {
      * @param user User to be committed to the database
      */
     private void commitChangedUser(User user) {
-        log("Committing changed user: " + user);
+        logger.info("Committing changed user: " + user);
         try (PreparedStatement s = dbConnection.prepareStatement("UPDATE users SET name=?, email=?, pass=?, deleted=? WHERE id=?;")) {
             s.setNString(1, user.getName());
             s.setNString(2, user.getEmail());
@@ -130,13 +193,13 @@ public class Server extends AbstractServer {
     /**
      * Creates a User with the given info and commits them to the database.
      *
-     * @param email     User's email
-     * @param name      Unique username
-     * @param password  Salted+Hashed password ready to be stored in the db
-     * @return          A user created with the information provided. Null if there was an error creating the user in the database
+     * @param email    User's email
+     * @param name     Unique username
+     * @param password Salted+Hashed password ready to be stored in the db
+     * @return A user created with the information provided. Null if there was an error creating the user in the database
      */
     private User createUser(String email, String name, String password) {
-        log("Creating new User: " + name);
+        logger.info("Creating new User: " + name);
         try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
             s.setNString(1, name);
             s.setNString(2, email);
@@ -149,7 +212,9 @@ public class Server extends AbstractServer {
             ResultSet rs = ps.executeQuery();
             rs.next();
             User user = new User(rs.getInt("id"), rs.getNString("email"), rs.getNString("name"), rs.getNString("pass"), rs.getBoolean("deleted"));
-            users.add(user);
+            synchronized (users) {
+                users.add(user);
+            }
             ps.close();
             return user;
         } catch (SQLException e) {
@@ -162,12 +227,12 @@ public class Server extends AbstractServer {
      * Initializes the heartbeat thread that sends a heartbeat message to all clients every 60 seconds.
      */
     private void initHeartbeatThread() {
-        log("Initializing heartbeat thread...");
+        logger.info("Initializing heartbeat thread...");
         new Timer(true).scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 if (!connections.isEmpty()) {
-                    log("Sending hearbeat to " + connections.size() + " connections...");
+                    logger.info("Sending hearbeat to " + connections.size() + " connections...");
 
                     synchronized (connections) {
                         for (ConnectionToClient client : connections) {
@@ -241,7 +306,7 @@ public class Server extends AbstractServer {
      * Central method for flow of client input in the form of Events.
      * Called each time an Event message is received from a client.
      *
-     * @param event Event that was received from the client.
+     * @param event  Event that was received from the client.
      * @param client Client from which the event originated.
      */
     private void handleEventFromClient(Event event, ConnectionToClient client) {
@@ -253,11 +318,64 @@ public class Server extends AbstractServer {
             //TODO: Handle login request from client.
             //TODO: Send LoginSuccessEvent if successful, send LoginFailedEvent if bad login.
         }
+
+        //Event handling for logged in clients
+        //--------------------------------------------------------------------------------------------------------------
+        if (user != null) {
+            if (event instanceof PlayerMoveEvent) {
+                handlePlayerMoveEvent((PlayerMoveEvent) event, user);
+            }
+        }
+    }
+
+    /**
+     * Handles a player move attempt from a given User. Modifies the match in question and notifies both players of changes.
+     *
+     * @param event Event received from the player
+     * @param user  The player that requested this move
+     */
+    private void handlePlayerMoveEvent(PlayerMoveEvent event, User user) {
+        Match match = getMatch(user.getId(), event.getEnemyId());
+        if (match != null) {
+            if (match.getCurrentPlayer() == user.getId()) {
+                match.makeMove(match.getBoard().getTiles()[event.getFromCol()][event.getFromRow()], match.getBoard().getTiles()[event.getToCol()][event.getToRow()]);
+                match.swapTurn();
+
+                //Notify player of match change
+                try {
+                    user.getClient().sendToClient(new MatchUpdateEvent(match));
+                } catch (IOException e) {
+                    logger.error("Error sending updated match to player client: " + user.getClient(), e);
+                }
+
+                //Notify enemy of match change
+                User enemy = getUserForID(event.getEnemyId());
+                if (enemy != null && enemy.isLoggedIn()) {
+                    try {
+                        enemy.getClient().sendToClient(new MatchUpdateEvent(match));
+                    } catch (IOException e) {
+                        logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
+                    }
+                }
+            } else {
+                try {
+                    user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
+                } catch (IOException e) {
+                    logger.error("Error sending NOT_YOUR_TURN fail event to client: " + user.getClient(), e);
+                }
+            }
+        } else {
+            try {
+                user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
+            } catch (IOException e) {
+                logger.error("Error sending NO_MATCH fail event to client: " + user.getClient(), e);
+            }
+        }
     }
 
     /**
      * Callback method called each time a new client connects.
-     *
+     * <p>
      * Registers the client with the server.
      *
      * @param client The client that connected
@@ -294,7 +412,7 @@ public class Server extends AbstractServer {
 
     /**
      * Callback method called when an exception is thrown for a client connection.
-     *
+     * <p>
      * Note: A client that disconnects erroneously without a disconnect event will throw an exception.
      *
      * @param client    The client that raised the exception.
@@ -310,19 +428,10 @@ public class Server extends AbstractServer {
      * Logs a message in the context of a client connection.
      *
      * @param client Client which this message is being logged with
-     * @param msg Message being logged
+     * @param msg    Message being logged
      */
     private void logClient(ConnectionToClient client, Object msg) {
-        log("[" + client + "]: " + msg);
-    }
-
-    /**
-     * Logs a message.
-     *
-     * @param msg Message to be logged
-     */
-    private void log(String msg) {
-        logger.info(msg);
+        logger.info("[" + client + "]: " + msg);
     }
 
     /**
@@ -332,8 +441,26 @@ public class Server extends AbstractServer {
      * @return The user object that represents the client. Null if the client has not logged in yet.
      */
     private User getUserForConnection(ConnectionToClient client) {
-        for (User user : users) {
-            if (user.getClient() == client) return user;
+        synchronized (users) {
+            for (User user : users) {
+                if (user.getClient() == client) return user;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Attempts to find a known user from a given user ID
+     *
+     * @param id ID of user to find
+     * @return User with the given ID, null if no such user exists
+     */
+    private User getUserForID(int id) {
+        synchronized (users) {
+            for (User user : users) {
+                if (user.getId() == id) return user;
+            }
         }
 
         return null;
