@@ -3,6 +3,7 @@ package Game;
 import java.util.ArrayList;
 
 import org.junit.*;
+import server.User;
 
 public class MatchTest {
 	private Match match;
@@ -25,8 +26,8 @@ public class MatchTest {
 	}
 	
 	@Before public void initialize() {
-		attacker = new User("attacker");
-		defender = new User("defender");
+		attacker = new User(1, "attacker", "", "");
+		defender = new User(2, "defender", "", "");
 		match = new Match(attacker, defender);
 		board = match.getBoard();
 		tiles = board.getTiles();

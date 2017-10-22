@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 public class Client extends AbstractClient {
+    private boolean authenticated = false;
 
     /**
      * SLF$J Logger for logging info for this client
@@ -52,8 +53,10 @@ public class Client extends AbstractClient {
             handleHeartbeat(event);
         } else if (event instanceof LoginFailedEvent) {
             //TODO: Handle login attempt failed
+            this.authenticated = false;
         } else if (event instanceof LoginSuccessEvent) {
             //TODO: Handle login attempt succeeded
+            this.authenticated = true;
         }
     }
 
@@ -84,12 +87,16 @@ public class Client extends AbstractClient {
         closeConnection();
     }
 
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
     public static void main(String[] args) {
-        try {
-            new Client("localhost", 54321);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            ///new Client("localhost", 54321);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
 }

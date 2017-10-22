@@ -1,6 +1,7 @@
 package Game;
 
 import org.junit.*;
+import server.User;
 
 public class BoardTest {
 	User attacker;
@@ -8,8 +9,8 @@ public class BoardTest {
 	Board board;
 	
 	@Before public void initialize() {
-		attacker = new User("attacker");
-		defender = new User("defender");
+		attacker = new User(1, "attacker", "", "");
+		defender = new User(2, "defender", "", "");
 		board = new Board(11,11);
 	}
 	@Test public void testInitializeTiles() {
