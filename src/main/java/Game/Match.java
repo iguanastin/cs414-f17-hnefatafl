@@ -141,6 +141,11 @@ public class Match implements Serializable {
             return false;
         }
 
+        // Check to make sure piece moving like rook (not changing both row and column)
+        if((startTile.getX() != endTile.getX()) && (startTile.getY() != endTile.getY())) {
+            return false;
+        }
+
         return true;
     }
 

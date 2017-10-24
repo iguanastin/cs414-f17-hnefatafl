@@ -173,4 +173,10 @@ public class MatchTest {
         assertFalse("Error: Should not be able to move opponent's pieces.",
                     match.isValidMove(tiles[3][5], tiles[2][5]));
     }
+
+    @Test
+    public void testPieceMustOnlyMoveLikeRook() {
+        assertFalse("Error: Piece cannot change both row and column in one move.",
+                    match.isValidMove(tiles[0][3], tiles[1][1]));
+    }
 }
