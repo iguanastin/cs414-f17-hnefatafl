@@ -146,6 +146,11 @@ public class Match implements Serializable {
             return false;
         }
 
+        // Check to make sure piece cannot move on top of another piece
+        if(endTile.hasPiece()) {
+            return false;
+        }
+
         return true;
     }
 

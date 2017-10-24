@@ -179,4 +179,11 @@ public class MatchTest {
         assertFalse("Error: Piece cannot change both row and column in one move.",
                     match.isValidMove(tiles[0][3], tiles[1][1]));
     }
+
+    @Test
+    public void testPieceCannotMoveOntoOtherPiece() {
+        assertFalse("Error: Piece cannot move on top of another piece",
+                    match.isValidMove(tiles[3][0], tiles[3][5]));
+    }
+
 }
