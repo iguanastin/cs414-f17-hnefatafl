@@ -161,15 +161,6 @@ public class MatchTest {
 
     @Test
     public void testCannotMoveOtherPlayersPiece() {
-        /*Tile[][] tiles = { {new Tile(TileType.NORMAL, 0, 0), new Tile(TileType.NORMAL, 1, 0)},
-                           {new Tile(TileType.NORMAL, 0, 1), new Tile(TileType.NORMAL, 1, 1)} };
-        tiles[0][0].setPiece(new Piece(1, Color.BLACK, false));
-        tiles[0][1].setPiece(new Piece(1, Color.BLACK, false));
-        tiles[1][0].setPiece(new Piece(2, Color.WHITE, false));
-        tiles[1][1].setPiece(new Piece(2, Color.WHITE, false));
-        Board testBoard = new Board(2, 2, tiles);
-        Match match = new Match(1, 2, testBoard); */
-
         assertFalse("Error: Should not be able to move opponent's pieces.",
                     match.isValidMove(tiles[3][5], tiles[2][5]));
     }
@@ -184,6 +175,12 @@ public class MatchTest {
     public void testPieceCannotMoveOntoOtherPiece() {
         assertFalse("Error: Piece cannot move on top of another piece",
                     match.isValidMove(tiles[3][0], tiles[3][5]));
+    }
+
+    @Test
+    public void testPieceCannotMovePastOtherPiece() {
+        assertFalse("Error: Piece cannot move past another piece",
+                    match.isValidMove(tiles[7][0], tiles[7][7]));
     }
 
 }
