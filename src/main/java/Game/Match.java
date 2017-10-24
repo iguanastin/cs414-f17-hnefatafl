@@ -167,7 +167,7 @@ public class Match implements Serializable {
                                 //Perform additional calculations if piece to be captured is a king
                                 if (tiles[x][y - 1].getPiece().isKing()) {
                                     //kingCaptured attempts to capture the king.
-                                    if (kingCapture(tiles[x + 1][y])) {
+                                    if (kingCapture(tiles[x][y - 1])) {
                                         //If king was successfully captured
                                         capturedTiles.add(tiles[x][y - 1]);
                                     }
