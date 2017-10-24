@@ -131,6 +131,10 @@ public class Match implements Serializable {
         return availableMoves;
     }
 
+    public boolean isValidMove(Tile startTile, Tile endTile) {
+
+    }
+
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
     public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
         HashSet<Tile> capturedTiles = new HashSet<Tile>();
