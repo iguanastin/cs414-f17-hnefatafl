@@ -131,8 +131,17 @@ public class Match implements Serializable {
         return availableMoves;
     }
 
+    // PRECONDITION: startTile contains a piece (no null checks needed)
     public boolean isValidMove(Tile startTile, Tile endTile) {
+        // Check to make sure not moving opponent's pieces
+        if((status == MatchStatus.ATTACKER_TURN) && (startTile.getPiece().getColor() == Color.WHITE)) {
+            return false;
+        }
+        else if((status == MatchStatus.DEFENDER_TURN) && (startTile.getPiece().getColor() == Color.BLACK)) {
+            return false;
+        }
 
+        return true;
     }
 
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.

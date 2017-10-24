@@ -16,7 +16,6 @@ public class MatchTest {
     private Board board;
     private Tile[][] tiles;
 
-
     private Tile[][] removeAllExceptKing(Tile[][] tiles) {
         for (int i = 0; i < tiles.length; i++) {
             for (int j = 0; j < tiles[i].length; j++) {
@@ -158,5 +157,20 @@ public class MatchTest {
         assertEquals(MatchStatus.DEFENDER_TURN, match.getStatus());
         match.makeMove(moves[5][5], moves[5][10]);
         assertEquals(MatchStatus.DEFENDER_WIN, match.getStatus());
+    }
+
+    @Test
+    public void testCannotMoveOtherPlayersPiece() {
+        /*Tile[][] tiles = { {new Tile(TileType.NORMAL, 0, 0), new Tile(TileType.NORMAL, 1, 0)},
+                           {new Tile(TileType.NORMAL, 0, 1), new Tile(TileType.NORMAL, 1, 1)} };
+        tiles[0][0].setPiece(new Piece(1, Color.BLACK, false));
+        tiles[0][1].setPiece(new Piece(1, Color.BLACK, false));
+        tiles[1][0].setPiece(new Piece(2, Color.WHITE, false));
+        tiles[1][1].setPiece(new Piece(2, Color.WHITE, false));
+        Board testBoard = new Board(2, 2, tiles);
+        Match match = new Match(1, 2, testBoard); */
+
+        assertFalse("Error: Should not be able to move opponent's pieces.",
+                    match.isValidMove(tiles[3][5], tiles[2][5]));
     }
 }
