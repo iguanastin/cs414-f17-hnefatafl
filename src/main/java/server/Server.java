@@ -41,7 +41,7 @@ public class Server extends AbstractServer {
      */
     private static final String DROP_BOARDS_TABLE = "DROP TABLE IF EXISTS boards;";
 
-    private static final String KNOWN_USERS = "knownUsers.txt";
+    private static final String KNOWN_USERS = "server/knownUsers.txt";
     private final String KEY = "thwcnmudgkvelbzfjxsoyrapiq";
     private final String ALPHA = "abcdefghijklmnopqrstuvwxyz";
 
@@ -257,9 +257,14 @@ public class Server extends AbstractServer {
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
         } else if (event instanceof LoginRequestEvent) {
-            //TODO: Handle login request from client.
-            //TODO: Send LoginSuccessEvent if successful, send LoginFailedEvent if bad login.
-            authenticate((LoginRequestEvent) event, client);
+            ///authenticate((LoginRequestEvent) event, client);
+            //Auth not working yet, just let them in.
+
+            try {
+                client.sendToClient(new LoginSuccessEvent(((LoginRequestEvent) event).getUsername()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         }
     }

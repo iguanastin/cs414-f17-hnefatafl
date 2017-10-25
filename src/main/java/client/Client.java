@@ -2,6 +2,11 @@ package client;
 
 
 import common.*;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +58,19 @@ public class Client extends AbstractClient {
             handleHeartbeat(event);
         } else if (event instanceof LoginFailedEvent) {
             //TODO: Handle login attempt failed
-            this.authenticated = false;
+
         } else if (event instanceof LoginSuccessEvent) {
             //TODO: Handle login attempt succeeded
-            this.authenticated = true;
+            try {
+                Parent root = FXMLLoader.load(getClass().getResource("/client-prototype.fxml"));
+                Stage stage = new Stage();
+                stage.setScene(new Scene(root));
+                stage.setTitle("Hnefatafl");
+                stage.show();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
