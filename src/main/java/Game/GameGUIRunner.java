@@ -1,5 +1,6 @@
 package Game;
 
+import javafx.scene.control.Alert;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Parent;
@@ -113,11 +114,8 @@ public class GameGUIRunner extends Application{
         piece.movePiece(newX_board, newY_board);
 
         // Check to see if game is over
-        if(match.getStatus() == MatchStatus.ATTACKER_WIN) {
-            System.out.println("ATTACKER WIN");
-        }
-        else if(match.getStatus() == MatchStatus.DEFENDER_WIN) {
-            System.out.println("DEFENDER WIN");
+        if((match.getStatus() == MatchStatus.ATTACKER_WIN) || (match.getStatus() == MatchStatus.DEFENDER_WIN)) {
+            displayEndDialogue();
         }
 
         // Remove captured pieces from GUI (anywhere from 0-3)
@@ -156,6 +154,13 @@ public class GameGUIRunner extends Application{
                     .build();
             root.getChildren().add(line);
         }
+    }
+
+    private void displayEndDialogue() {
+        Alert a = new Alert(Alert.AlertType.INFORMATION);
+        String message = match.getStatus() == MatchStatus.ATTACKER_WIN ? "Attackers win!" : "Defenders win!";
+        a.setContentText(message);
+        a.showAndWait();
     }
 
     @Override
