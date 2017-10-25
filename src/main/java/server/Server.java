@@ -97,6 +97,10 @@ public class Server extends AbstractServer {
         connectToDB();
 
         initHeartbeatThread();
+
+        //TODO: Remove this, testing purposes
+        createUser("test@test.test", "user1", "1234");
+        createUser("test2@test.test", "user2", "1234");
     }
 
     /**
@@ -324,13 +328,27 @@ public class Server extends AbstractServer {
         } else if (event instanceof LoginRequestEvent) {
             ///authenticate((LoginRequestEvent) event, client);
             //Auth not working yet, just let them in.
-
-            try {
-                client.sendToClient(new LoginSuccessEvent(((LoginRequestEvent) event).getUsername()));
-            } catch (IOException e) {
-                e.printStackTrace();
+            for (User u : users) {
+                if (u.getName().equals(((LoginRequestEvent) event).getUsername())) {
+                    user = u;
+                    break;
+                }
             }
 
+            if (user == null) {
+                try {
+                    client.sendToClient(new LoginFailedEvent(((LoginRequestEvent) event).getUsername()));
+                } catch (IOException e) {
+                    logger.error("Error sending login failed event", e);
+                }
+            } else {
+                user.setClient(client);
+                try {
+                    client.sendToClient(new LoginSuccessEvent(user.getName(), user.getId()));
+                } catch (IOException e) {
+                    logger.error("Error sending login success event", e);
+                }
+            }
         }
 
         //Event handling for logged in clients
@@ -338,6 +356,23 @@ public class Server extends AbstractServer {
         if (user != null) {
             if (event instanceof PlayerMoveEvent) {
                 handlePlayerMoveEvent((PlayerMoveEvent) event, user);
+            } else if (event instanceof InviteToMatchEvent) {
+                User enemy = getUserForName(((InviteToMatchEvent) event).getName());
+                if (enemy != null && getMatch(user.getId(), enemy.getId()) == null) {
+                    startMatch(user, enemy);
+                }
+
+                //TODO Make this actually invite and check for bad cases
+            } else if (event instanceof RequestCurrentGamesEvent) {
+                for (Match match : matches) {
+                    if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
+                        try {
+                            client.sendToClient(new MatchStartEvent(match));
+                        } catch (IOException e) {
+                            logger.error("Error sending in-progress match to user: " + user.getName(), e);
+                        }
+                    }
+                }
             }
         }
     }
@@ -352,11 +387,21 @@ public class Server extends AbstractServer {
         Match match = getMatch(user.getId(), event.getEnemyId());
         if (match != null) {
             if (match.getCurrentPlayer() == user.getId()) {
-                match.makeMove(match.getBoard().getTiles()[event.getFromCol()][event.getFromRow()], match.getBoard().getTiles()[event.getToCol()][event.getToRow()]);
+                if (!match.isValidMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()])) {
+                    try {
+                        user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
+                    } catch (IOException e) {
+                        logger.error("Error sending INVALID_MOVE failure to client: " + user.getClient(), e);
+                    }
+                    return;
+                }
+
+                match.makeMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()]);
                 match.swapTurn();
 
                 //Notify player of match change
                 try {
+                    user.getClient().forceResetAfterSend();
                     user.getClient().sendToClient(new MatchUpdateEvent(match));
                 } catch (IOException e) {
                     logger.error("Error sending updated match to player client: " + user.getClient(), e);
@@ -366,6 +411,7 @@ public class Server extends AbstractServer {
                 User enemy = getUserForID(event.getEnemyId());
                 if (enemy != null && enemy.isLoggedIn()) {
                     try {
+                        enemy.getClient().forceResetAfterSend();
                         enemy.getClient().sendToClient(new MatchUpdateEvent(match));
                     } catch (IOException e) {
                         logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
@@ -480,10 +526,21 @@ public class Server extends AbstractServer {
         return null;
     }
 
+    private User getUserForName(String name) {
+        synchronized (users) {
+            for (User user : users) {
+                if (user.getName().equalsIgnoreCase(name)) return user;
+            }
+        }
+
+        return null;
+    }
+
 
     public synchronized boolean authenticate(LoginRequestEvent loginInfo, ConnectionToClient client){
         String line;
         boolean userExists = false;
+        //TODO: Get user from instance variable 'users' instead of text file
 
         try {
             FileReader fileReader = new FileReader(KNOWN_USERS);
@@ -495,10 +552,11 @@ public class Server extends AbstractServer {
                 if(userPass[0].equals(loginInfo.getUsername())){
                     userExists = true;
                     String encryptedPassword = encrypt(loginInfo.getPassword());
+                    int user_id = 0; //TODO: GET ACTUAL USER ID
 
                     //Check the sncrytion mathces in both direction
                     if(userPass[1].equals(encryptedPassword) && decrypt(userPass[1]).equals(loginInfo.getPassword())){
-                        client.sendToClient(new LoginSuccessEvent(userPass[0]));
+                        client.sendToClient(new LoginSuccessEvent(userPass[0], user_id));
                     }
                     else{
                         client.sendToClient(new LoginFailedEvent(userPass[0]));

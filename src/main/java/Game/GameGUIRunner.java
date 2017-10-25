@@ -27,7 +27,7 @@ public class GameGUIRunner extends Application{
 
     private Match match = new Match(1, 2);
 
-    private Parent createContent() {
+    public Parent createContent() {
         root.setPrefSize(NUM_ROWS * TILE_SIZE, NUM_COLS * TILE_SIZE);
         root.getChildren().addAll(tileGroup, pieceGroup);
 

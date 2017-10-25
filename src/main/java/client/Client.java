@@ -2,19 +2,20 @@ package client;
 
 
 import common.*;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Client extends AbstractClient {
+
     private boolean authenticated = false;
+    private int userID = -1;
+
+    private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
+    private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
+
 
     /**
      * SLF$J Logger for logging info for this client
@@ -58,22 +59,23 @@ public class Client extends AbstractClient {
         if (event instanceof HeartbeatEvent) {
             handleHeartbeat(event);
         } else if (event instanceof LoginFailedEvent) {
-            //TODO: Handle login attempt failed
+            LoginFailedEvent lfEvent = (LoginFailedEvent) event;
 
+            //Notify login listeners
+            loginListeners.forEach(listener -> listener.loginFailed(lfEvent.getUsername()));
         } else if (event instanceof LoginSuccessEvent) {
-            //TODO: Handle login attempt succeeded
-            Platform.runLater(() -> {
-                try {
-                    Parent root = FXMLLoader.load(getClass().getResource("/client-prototype.fxml"));
-                    Stage stage = new Stage();
-                    stage.setScene(new Scene(root));
-                    stage.setTitle("Hnefatafl");
-                    stage.show();
+            LoginSuccessEvent lsEvent = (LoginSuccessEvent) event;
+            userID = lsEvent.getId();
 
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            //Notify login listeners
+            loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
+        } else if (event instanceof MatchStartEvent) {
+            matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
+        } else if (event instanceof MatchUpdateEvent) {
+            System.out.println(((MatchUpdateEvent) event).getMatch().getBoard());
+            matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
+        } else if (event instanceof PlayerMoveFailedEvent) {
+            logger.error("Failed a player move");
         }
     }
 
@@ -106,6 +108,26 @@ public class Client extends AbstractClient {
 
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    public boolean addLoginListener(LoginListener listener) {
+        return loginListeners.add(listener);
+    }
+
+    public boolean addMatchListener(MatchListener listener) {
+        return matchListeners.add(listener);
+    }
+
+    public boolean removeLoginListener(LoginListener listener) {
+        return loginListeners.remove(listener);
+    }
+
+    public boolean removeMatchListener(MatchListener listener) {
+        return matchListeners.remove(listener);
+    }
+
+    public int getUserID() {
+        return userID;
     }
 
     public static void main(String[] args) {

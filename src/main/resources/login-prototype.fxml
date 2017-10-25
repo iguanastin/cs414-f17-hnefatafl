@@ -11,10 +11,10 @@
    <center>
       <VBox alignment="CENTER" prefHeight="285.0" prefWidth="408.0" BorderPane.alignment="CENTER">
          <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-            <TextField fx:id="loginUsername" promptText="Username" />
+            <TextField onAction="#loginOnAction" fx:id="loginUsername" promptText="Username" />
          </HBox>
          <HBox alignment="CENTER" layoutX="10.0" layoutY="160.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-            <PasswordField fx:id="loginPassword" promptText="Password" />
+            <PasswordField onAction="#loginOnAction" fx:id="loginPassword" promptText="Password" />
          </HBox>
          <HBox alignment="CENTER" layoutX="10.0" layoutY="210.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
             <Button onAction="#loginOnAction" mnemonicParsing="false" text="Login" />

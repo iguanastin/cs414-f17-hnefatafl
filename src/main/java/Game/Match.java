@@ -367,4 +367,25 @@ public class Match implements Serializable {
         }
         return false;
     }
+
+    public Match clone() {
+        Match match = new Match(getAttacker(), getDefender());
+        for (int i = 0; i < board.getWidth(); i++) {
+            for (int j = 0; j < board.getHeight(); j++) {
+                match.getBoard().getTiles()[i][j].setType(board.getTiles()[i][j].getType());
+                match.getBoard().getTiles()[i][j].setPiece(board.getTiles()[i][j].getPiece());
+            }
+        }
+        if (match.getCurrentPlayer() != getCurrentPlayer()) {
+            swapTurn();
+        }
+
+        return match;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Match && ((Match) obj).getAttacker() == getAttacker() && ((Match) obj).getDefender() == getDefender();
+    }
+
 }

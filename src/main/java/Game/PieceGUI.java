@@ -8,9 +8,13 @@ public class PieceGUI extends StackPane {
 
     private double mouseX, mouseY;
     private double oldX, oldY;
+    private int xCoord, yCoord;
 
     public PieceGUI(int x_coord, int y_coord, PieceTypeGUI type) {
         movePiece(x_coord, y_coord);
+
+        this.xCoord = x_coord;
+        this.yCoord = y_coord;
 
         Circle piece = new Circle(GameGUIRunner.TILE_SIZE * 0.3);
         switch(type) {
@@ -47,5 +51,14 @@ public class PieceGUI extends StackPane {
 
     public double getOldY() { return oldY; }
     public double getOldX() { return oldX; }
+
+    public int getxCoord() {
+        return xCoord;
+    }
+
+    public int getyCoord() {
+        return yCoord;
+    }
+
 }
 
