@@ -66,7 +66,7 @@ public class GameTab extends Tab {
             for (int col = 0; col < tiles[0].length; col++) {
                 TileGUI tileGUI = new TileGUI(row, col);
                 tileGUI.setOnDragOver(event -> {
-                    if (event.getGestureSource() instanceof PieceGUI) {
+                    if (event.getGestureSource() instanceof PieceGUI && !event.getGestureSource().equals(tileGUI.getPiece())) {
                         event.acceptTransferModes(TransferMode.ANY);
                     }
                     event.consume();
@@ -113,7 +113,7 @@ public class GameTab extends Tab {
                     });
                     pieceGUI.setOnDragDone(event -> {
                         for (Node node : grid.getChildren()) {
-                            if (node instanceof TileGUI) {
+                            if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
                                 ((TileGUI) node).setBackgroundColor("transparent");
                             }
                         }
