@@ -131,6 +131,24 @@ public class Match implements Serializable {
         return availableMoves;
     }
 
+    // PRECONDITION: startTile contains a piece (no null checks needed)
+    public boolean isValidMove(Tile startTile, Tile endTile) {
+        // Check to make sure not moving opponent's pieces
+        if((status == MatchStatus.ATTACKER_TURN) && (startTile.getPiece().getColor() == Color.WHITE)) {
+            return false;
+        }
+        else if((status == MatchStatus.DEFENDER_TURN) && (startTile.getPiece().getColor() == Color.BLACK)) {
+            return false;
+        }
+
+        // Check that the endTile was in the list of valid moves
+        if(!(getAvaiableMoves(startTile).contains(endTile))) {
+            return false;
+        }
+
+        return true;
+    }
+
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
     public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
         HashSet<Tile> capturedTiles = new HashSet<Tile>();

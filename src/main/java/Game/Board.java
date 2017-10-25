@@ -15,6 +15,13 @@ public class Board implements Serializable {
         tiles = new Tile[height][width];
     }
 
+    // Constructor for custom board states, used for tests
+    public Board(int width, int height, Tile[][] tiles) {
+        this.width = width;
+        this.height = height;
+        tiles = new Tile[height][width];
+    }
+
     public Tile[][] getTiles() {
         return tiles;
     }
