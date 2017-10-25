@@ -85,7 +85,13 @@ public class GameGUIRunner extends Application{
             int newX_board = toBoard(piece.getLayoutX());
             int newY_board = toBoard(piece.getLayoutY());
 
-            makeMove(piece, oldX_board, oldY_board, newX_board, newY_board);
+            Tile[][] tiles = match.getBoard().getTiles();
+            if(match.isValidMove(tiles[oldX_board][oldY_board], tiles[newX_board][newY_board])) {
+                makeMove(piece, oldX_board, oldY_board, newX_board, newY_board);
+            }
+            else {
+                piece.relocate(piece.getOldX(), piece.getOldY());
+            }
         });
 
         return piece;
