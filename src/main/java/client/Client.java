@@ -3,6 +3,7 @@ package client;
 
 import common.*;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -61,16 +62,18 @@ public class Client extends AbstractClient {
 
         } else if (event instanceof LoginSuccessEvent) {
             //TODO: Handle login attempt succeeded
-            try {
-                Parent root = FXMLLoader.load(getClass().getResource("/client-prototype.fxml"));
-                Stage stage = new Stage();
-                stage.setScene(new Scene(root));
-                stage.setTitle("Hnefatafl");
-                stage.show();
+            Platform.runLater(() -> {
+                try {
+                    Parent root = FXMLLoader.load(getClass().getResource("/client-prototype.fxml"));
+                    Stage stage = new Stage();
+                    stage.setScene(new Scene(root));
+                    stage.setTitle("Hnefatafl");
+                    stage.show();
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
     }
 
