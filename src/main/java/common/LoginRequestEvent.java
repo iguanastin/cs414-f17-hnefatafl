@@ -6,10 +6,8 @@ import client.Client;
 public class LoginRequestEvent extends Event {
 
     private final String username, password;
-    private Client client;
 
-    public LoginRequestEvent(Client client, String username, String password) {
-        this.client = client;
+    public LoginRequestEvent(String username, String password) {
         this.username = username;
         this.password = password;
     }
@@ -20,10 +18,6 @@ public class LoginRequestEvent extends Event {
 
     public String getPassword() {
         return password;
-    }
-
-    public Client getClient() {
-        return client;
     }
 
     @Override

@@ -28,11 +28,8 @@ public class LoginController {
         Client loginClient = null;
         try {
             loginClient = new Client("localhost",54321);
-            loginClient.sendToServer(new LoginRequestEvent(loginClient, loginUsername.getText(), loginPassword.getText()));
+            loginClient.sendToServer(new LoginRequestEvent(loginUsername.getText(), loginPassword.getText()));
 
-            if(loginClient.isAuthenticated()){
-
-            }
         } catch (IOException e) {
             e.printStackTrace();
         }
