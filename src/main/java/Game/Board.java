@@ -94,6 +94,7 @@ public class Board implements Serializable {
         tiles[5][5].setPiece(new Piece(defender, Color.WHITE, true));
     }
 
+    @Override
     public String toString() {
         String toStr = "Tiles:\n";
         for (int i = 0; i < height; i++) {

@@ -4,10 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-enum MatchStatus implements Serializable {
-    ATTACKER_TURN, DEFENDER_TURN, ATTACKER_WIN, DEFENDER_WIN, DRAW_GAME
-}
-
 public class Match implements Serializable {
     private Board board;
     private int attacker;
@@ -367,4 +363,10 @@ public class Match implements Serializable {
         }
         return false;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof Match && ((Match) obj).getAttacker() == getAttacker() && ((Match) obj).getDefender() == getDefender();
+    }
+
 }
