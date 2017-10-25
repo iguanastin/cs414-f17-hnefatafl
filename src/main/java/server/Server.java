@@ -5,6 +5,9 @@ import common.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -38,6 +41,10 @@ public class Server extends AbstractServer {
      * SQL Statement to drop the boards table
      */
     private static final String DROP_BOARDS_TABLE = "DROP TABLE IF EXISTS boards;";
+
+    private static final String KNOWN_USERS = "server/knownUsers.txt";
+    private final String KEY = "thwcnmudgkvelbzfjxsoyrapiq";
+    private final String ALPHA = "abcdefghijklmnopqrstuvwxyz";
 
     /**
      * SQL Database connection to the database
@@ -315,8 +322,15 @@ public class Server extends AbstractServer {
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
         } else if (event instanceof LoginRequestEvent) {
-            //TODO: Handle login request from client.
-            //TODO: Send LoginSuccessEvent if successful, send LoginFailedEvent if bad login.
+            ///authenticate((LoginRequestEvent) event, client);
+            //Auth not working yet, just let them in.
+
+            try {
+                client.sendToClient(new LoginSuccessEvent(((LoginRequestEvent) event).getUsername()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
         //Event handling for logged in clients
@@ -464,6 +478,59 @@ public class Server extends AbstractServer {
         }
 
         return null;
+    }
+
+
+    public synchronized boolean authenticate(LoginRequestEvent loginInfo, ConnectionToClient client){
+        String line;
+        boolean userExists = false;
+
+        try {
+            FileReader fileReader = new FileReader(KNOWN_USERS);
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+
+            while((line = bufferedReader.readLine()) != null) {
+                String[] userPass = line.split("<===>");
+
+                if(userPass[0].equals(loginInfo.getUsername())){
+                    userExists = true;
+                    String encryptedPassword = encrypt(loginInfo.getPassword());
+
+                    //Check the sncrytion mathces in both direction
+                    if(userPass[1].equals(encryptedPassword) && decrypt(userPass[1]).equals(loginInfo.getPassword())){
+                        client.sendToClient(new LoginSuccessEvent(userPass[0]));
+                    }
+                    else{
+                        client.sendToClient(new LoginFailedEvent(userPass[0]));
+                    }
+                }
+            }
+        }
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+
+    public String encrypt(String plainText){
+        String encrypt = "";
+        for(char s: plainText.toCharArray()){
+            encrypt += KEY.charAt(ALPHA.indexOf(s));
+        }
+        return encrypt;
+    }
+
+    public String decrypt(String cipherText){
+        String decrypt = "";
+        for(char s: cipherText.toCharArray()){
+            decrypt += ALPHA.charAt(KEY.indexOf(s));
+        }
+        return decrypt;
     }
 
     /**

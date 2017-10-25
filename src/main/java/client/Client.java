@@ -2,12 +2,18 @@ package client;
 
 
 import common.*;
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class Client extends AbstractClient {
+    private boolean authenticated = false;
 
     /**
      * SLF$J Logger for logging info for this client
@@ -52,8 +58,19 @@ public class Client extends AbstractClient {
             handleHeartbeat(event);
         } else if (event instanceof LoginFailedEvent) {
             //TODO: Handle login attempt failed
+
         } else if (event instanceof LoginSuccessEvent) {
             //TODO: Handle login attempt succeeded
+            try {
+                Parent root = FXMLLoader.load(getClass().getResource("/client-prototype.fxml"));
+                Stage stage = new Stage();
+                stage.setScene(new Scene(root));
+                stage.setTitle("Hnefatafl");
+                stage.show();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -84,12 +101,16 @@ public class Client extends AbstractClient {
         closeConnection();
     }
 
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
     public static void main(String[] args) {
-        try {
-            new Client("localhost", 54321);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            ///new Client("localhost", 54321);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
     }
 
 }

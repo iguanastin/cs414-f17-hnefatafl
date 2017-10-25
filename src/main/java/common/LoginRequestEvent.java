@@ -1,6 +1,8 @@
 package common;
 
 
+import client.Client;
+
 public class LoginRequestEvent extends Event {
 
     private final String username, password;

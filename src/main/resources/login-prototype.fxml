@@ -6,14 +6,15 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
+<?import javafx.scene.control.PasswordField?>
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="158.0" prefWidth="237.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.LoginController">
    <center>
       <VBox alignment="CENTER" prefHeight="285.0" prefWidth="408.0" BorderPane.alignment="CENTER">
          <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-            <TextField promptText="Username" />
+            <TextField fx:id="loginUsername" promptText="Username" />
          </HBox>
          <HBox alignment="CENTER" layoutX="10.0" layoutY="160.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-            <TextField promptText="Password" />
+            <PasswordField fx:id="loginPassword" promptText="Password" />
          </HBox>
          <HBox alignment="CENTER" layoutX="10.0" layoutY="210.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
             <Button onAction="#loginOnAction" mnemonicParsing="false" text="Login" />
