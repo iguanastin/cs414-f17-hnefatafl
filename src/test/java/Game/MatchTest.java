@@ -16,7 +16,6 @@ public class MatchTest {
     private Board board;
     private Tile[][] tiles;
 
-
     private Tile[][] removeAllExceptKing(Tile[][] tiles) {
         for (int i = 0; i < tiles.length; i++) {
             for (int j = 0; j < tiles[i].length; j++) {
@@ -159,4 +158,29 @@ public class MatchTest {
         match.makeMove(moves[5][5], moves[5][10]);
         assertEquals(MatchStatus.DEFENDER_WIN, match.getStatus());
     }
+
+    @Test
+    public void testCannotMoveOtherPlayersPiece() {
+        assertFalse("Error: Should not be able to move opponent's pieces.",
+                    match.isValidMove(tiles[3][5], tiles[2][5]));
+    }
+
+    @Test
+    public void testPieceMustOnlyMoveLikeRook() {
+        assertFalse("Error: Piece cannot change both row and column in one move.",
+                    match.isValidMove(tiles[0][3], tiles[1][1]));
+    }
+
+    @Test
+    public void testPieceCannotMoveOntoOtherPiece() {
+        assertFalse("Error: Piece cannot move on top of another piece",
+                    match.isValidMove(tiles[3][0], tiles[3][5]));
+    }
+
+    @Test
+    public void testPieceCannotMovePastOtherPiece() {
+        assertFalse("Error: Piece cannot move past another piece",
+                    match.isValidMove(tiles[7][0], tiles[7][7]));
+    }
+
 }

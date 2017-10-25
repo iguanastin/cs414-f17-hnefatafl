@@ -25,8 +25,7 @@ public class GameGUIRunner extends Application{
     private Group tileGroup = new Group();
     private Group pieceGroup = new Group();
 
-    private Match match = new Match(new User(1, "attacker@gmail.com", "Attacker", "1234"),
-                                    new User(2, "defender@gmail.com", "Defender", "5678"));
+    private Match match = new Match(1, 2);
 
     private Parent createContent() {
         root.setPrefSize(NUM_ROWS * TILE_SIZE, NUM_COLS * TILE_SIZE);
@@ -86,7 +85,13 @@ public class GameGUIRunner extends Application{
             int newX_board = toBoard(piece.getLayoutX());
             int newY_board = toBoard(piece.getLayoutY());
 
-            makeMove(piece, oldX_board, oldY_board, newX_board, newY_board);
+            Tile[][] tiles = match.getBoard().getTiles();
+            if(match.isValidMove(tiles[oldX_board][oldY_board], tiles[newX_board][newY_board])) {
+                makeMove(piece, oldX_board, oldY_board, newX_board, newY_board);
+            }
+            else {
+                piece.relocate(piece.getOldX(), piece.getOldY());
+            }
         });
 
         return piece;
