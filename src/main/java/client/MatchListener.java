@@ -9,4 +9,6 @@ public interface MatchListener {
 
     void matchStarted(Match match);
 
+    void matchFinished(Match match);
+
 }

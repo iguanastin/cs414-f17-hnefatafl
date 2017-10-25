@@ -43,5 +43,9 @@ public class TileGUI extends BorderPane {
         return xCoord;
     }
 
+    public void setBackgroundColor(String color) {
+        setStyle("-fx-background-color: " + color + ";");
+    }
+
 }
 

@@ -3,6 +3,7 @@ package client;
 import Game.*;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
+import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -23,9 +24,12 @@ public class GameTab extends Tab {
 
     private final ArrayList<MoveListener> moveListeners = new ArrayList<>();
 
+    private final int userId;
 
-    public GameTab(String title) {
+
+    public GameTab(String title, int userId) {
         super(title);
+        this.userId = userId;
 
         initGrid();
     }
@@ -36,6 +40,8 @@ public class GameTab extends Tab {
         grid.getColumnConstraints().addAll(Collections.nCopies(11, new ColumnConstraints(50, 100, 1000, Priority.ALWAYS, HPos.CENTER, true)));
         grid.getRowConstraints().addAll(Collections.nCopies(11, new RowConstraints(50, 100, 1000, Priority.ALWAYS, VPos.CENTER, true)));
         setContent(grid);
+
+        grid.setStyle("-fx-background-color: gray;");
     }
 
     public void setMatch(Match match) {
@@ -46,6 +52,10 @@ public class GameTab extends Tab {
 
     public Match getMatch() {
         return match;
+    }
+
+    public int getUserId() {
+        return userId;
     }
 
     public void updateMatchView() {
@@ -76,14 +86,37 @@ public class GameTab extends Tab {
                     } else if (piece.getUser() == match.getDefender()) {
                         type = PieceTypeGUI.DEFENDER;
                     }
+                    if (match.getCurrentPlayer() == getUserId() && piece.getUser() == getUserId()) {
+                        tileGUI.setBackgroundColor("yellow");
+                    }
 
                     PieceGUI pieceGUI = new PieceGUI(row, col, type);
                     pieceGUI.setOnDragDetected(event -> {
-                        Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
-                        ClipboardContent cc = new ClipboardContent();
-                        cc.putString(pieceGUI.toString());
-                        db.setContent(cc);
+                        if (match.getCurrentPlayer() == getUserId()) {
+                            //Start drag
+                            Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
+                            ClipboardContent cc = new ClipboardContent();
+                            cc.putString(pieceGUI.toString());
+                            db.setContent(cc);
+
+                            final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
+                            for (Node node : grid.getChildren()) {
+                                if (node instanceof TileGUI) {
+                                    if (moves.contains(match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()])) {
+                                        ((TileGUI) node).setBackgroundColor("green");
+                                    }
+                                }
+                            }
+                        }
+
                         event.consume();
+                    });
+                    pieceGUI.setOnDragDone(event -> {
+                        for (Node node : grid.getChildren()) {
+                            if (node instanceof TileGUI) {
+                                ((TileGUI) node).setBackgroundColor("transparent");
+                            }
+                        }
                     });
 
                     tileGUI.setPiece(pieceGUI);

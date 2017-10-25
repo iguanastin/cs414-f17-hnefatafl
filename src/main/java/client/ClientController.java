@@ -34,7 +34,7 @@ public class ClientController implements MatchListener, MoveListener {
 
     private final ArrayList<GameTab> gameTabs = new ArrayList<>();
 
-    private final Logger logger = LoggerFactory.getLogger(LoginController.class);
+    private final Logger logger = LoggerFactory.getLogger(ClientController.class);
 
 
     @FXML
@@ -89,12 +89,14 @@ public class ClientController implements MatchListener, MoveListener {
             int enemyID = match.getAttacker();
             if (match.getAttacker() == client.getUserID()) enemyID = match.getDefender();
 
-            GameTab tab = new GameTab("Against: " + enemyID);
+            GameTab tab = new GameTab("Against: " + enemyID, client.getUserID());
             gameTabs.add(tab);
             tabPane.getTabs().add(tab);
 
             tab.setMatch(match);
             tab.addMoveListener(this);
+
+            gamesListView.getItems().add(match.getAttacker() + "v" + match.getDefender());
         });
     }
 
@@ -112,6 +114,8 @@ public class ClientController implements MatchListener, MoveListener {
             }
 
             if (toRemove != null) gameTabs.remove(toRemove);
+
+            gamesListView.getItems().remove(match.getAttacker() + "v" + match.getDefender());
         });
     }
 
@@ -130,6 +134,19 @@ public class ClientController implements MatchListener, MoveListener {
     @Override
     public void matchStarted(Match match) {
         openGame(match);
+    }
+
+    @Override
+    public void matchFinished(Match match) {
+        Platform.runLater(() -> {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setContentText("Result: " + match.getStatus());
+            a.setTitle("Match finished");
+            a.setHeaderText("Match finished between " + match.getAttacker() + " and " + match.getDefender());
+            a.showAndWait();
+
+            endGame(match);
+        });
     }
 
     @Override

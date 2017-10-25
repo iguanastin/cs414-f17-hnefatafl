@@ -4,10 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-enum MatchStatus implements Serializable {
-    ATTACKER_TURN, DEFENDER_TURN, ATTACKER_WIN, DEFENDER_WIN, DRAW_GAME
-}
-
 public class Match implements Serializable {
     private Board board;
     private int attacker;
@@ -366,21 +362,6 @@ public class Match implements Serializable {
             return true;
         }
         return false;
-    }
-
-    public Match clone() {
-        Match match = new Match(getAttacker(), getDefender());
-        for (int i = 0; i < board.getWidth(); i++) {
-            for (int j = 0; j < board.getHeight(); j++) {
-                match.getBoard().getTiles()[i][j].setType(board.getTiles()[i][j].getType());
-                match.getBoard().getTiles()[i][j].setPiece(board.getTiles()[i][j].getPiece());
-            }
-        }
-        if (match.getCurrentPlayer() != getCurrentPlayer()) {
-            swapTurn();
-        }
-
-        return match;
     }
 
     @Override

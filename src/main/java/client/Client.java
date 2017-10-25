@@ -73,6 +73,8 @@ public class Client extends AbstractClient {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
+        } else if (event instanceof MatchFinishEvent) {
+            matchListeners.forEach(listener -> listener.matchFinished(((MatchFinishEvent) event).getMatch()));
         } else if (event instanceof PlayerMoveFailedEvent) {
             logger.error("Failed a player move");
         }

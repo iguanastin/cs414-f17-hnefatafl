@@ -1,6 +1,7 @@
 package server;
 
 import Game.Match;
+import Game.MatchStatus;
 import common.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,6 +212,7 @@ public class Server extends AbstractServer {
      * @return A user created with the information provided. Null if there was an error creating the user in the database
      */
     private User createUser(String email, String name, String password) {
+        if (getUserForName(name) != null) return null;
         logger.info("Creating new User: " + name);
         try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
             s.setNString(1, name);
@@ -386,6 +388,8 @@ public class Server extends AbstractServer {
      */
     private void handlePlayerMoveEvent(PlayerMoveEvent event, User user) {
         Match match = getMatch(user.getId(), event.getEnemyId());
+        User enemy = getUserForID(event.getEnemyId());
+
         if (match != null) {
             if (match.getCurrentPlayer() == user.getId()) {
                 if (!match.isValidMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()])) {
@@ -398,25 +402,12 @@ public class Server extends AbstractServer {
                 }
 
                 match.makeMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()]);
+                final boolean end = match.isOver();
                 match.swapTurn();
 
-                //Notify player of match change
-                try {
-                    user.getClient().forceResetAfterSend();
-                    user.getClient().sendToClient(new MatchUpdateEvent(match));
-                } catch (IOException e) {
-                    logger.error("Error sending updated match to player client: " + user.getClient(), e);
-                }
-
-                //Notify enemy of match change
-                User enemy = getUserForID(event.getEnemyId());
-                if (enemy != null && enemy.isLoggedIn()) {
-                    try {
-                        enemy.getClient().forceResetAfterSend();
-                        enemy.getClient().sendToClient(new MatchUpdateEvent(match));
-                    } catch (IOException e) {
-                        logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
-                    }
+                notifyMatchUpdate(user, match, enemy);
+                if (end) {
+                    endMatch(user, match, enemy);
                 }
             } else {
                 try {
@@ -430,6 +421,51 @@ public class Server extends AbstractServer {
                 user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
             } catch (IOException e) {
                 logger.error("Error sending NO_MATCH fail event to client: " + user.getClient(), e);
+            }
+        }
+    }
+
+    private User notifyMatchUpdate(User user, Match match, User enemy) {
+        //Notify player of match change
+        try {
+            user.getClient().forceResetAfterSend();
+            user.getClient().sendToClient(new MatchUpdateEvent(match));
+        } catch (IOException e) {
+            logger.error("Error sending updated match to player client: " + user.getClient(), e);
+        }
+
+        //Notify enemy of match change
+        if (enemy != null && enemy.isLoggedIn()) {
+            try {
+                enemy.getClient().forceResetAfterSend();
+                enemy.getClient().sendToClient(new MatchUpdateEvent(match));
+            } catch (IOException e) {
+                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
+            }
+        }
+        return enemy;
+    }
+
+    private void endMatch(User user, Match match, User enemy) {
+        logger.info("Match finished " + match.getAttacker() + "v" + match.getDefender());
+
+        synchronized (matches) {
+            matches.remove(match);
+        }
+
+        //Notify player of match finish
+        try {
+            user.getClient().sendToClient(new MatchFinishEvent(match));
+        } catch (IOException e) {
+            logger.error("Error sending updated match to player client: " + user.getClient(), e);
+        }
+
+        //Notify enemy of match finish
+        if (enemy != null && enemy.isLoggedIn()) {
+            try {
+                enemy.getClient().sendToClient(new MatchFinishEvent(match));
+            } catch (IOException e) {
+                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
             }
         }
     }
