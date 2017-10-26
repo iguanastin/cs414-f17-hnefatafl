@@ -1,8 +1,6 @@
 package client;
 
 
-import Game.GameGUIRunner;
-import common.Event;
 import common.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -21,10 +19,10 @@ import java.io.IOException;
 
 public class LoginController implements LoginListener {
 
-    @FXML
-    private TextField loginUsername;
-    @FXML
-    private PasswordField loginPassword;
+    public TextField portTextField;
+    public TextField hostTextField;
+    public TextField usernameTextField;
+    public PasswordField passwordTextField;
 
     private final Logger logger = LoggerFactory.getLogger(LoginController.class);
     private Client client;
@@ -32,20 +30,14 @@ public class LoginController implements LoginListener {
 
     @FXML
     public void initialize() {
-        try {
-            client = new Client("localhost", 54321);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        client.addLoginListener(this);
-
         Platform.runLater(() -> {
-            loginUsername.getScene().getWindow().setOnCloseRequest(event -> {
-                try {
-                    client.disconnect();
-                } catch (IOException e) {
-                    logger.error("Error closing client connection", e);
+            usernameTextField.getScene().getWindow().setOnCloseRequest(event -> {
+                if (client != null) {
+                    try {
+                        client.disconnect();
+                    } catch (IOException e) {
+                        logger.error("Error closing client connection", e);
+                    }
                 }
             });
         });
@@ -53,37 +45,45 @@ public class LoginController implements LoginListener {
 
     public void loginOnAction(ActionEvent event) {
         try {
-            client.sendToServer(new LoginRequestEvent(loginUsername.getText(), loginPassword.getText()));
+            client = new Client(hostTextField.getText(), Integer.parseInt(portTextField.getText()));
+        } catch (IOException e) {
+            logger.error("Error connecting to server " + hostTextField.getText() + ":" + portTextField.getText(), e);
+            loginFailed(usernameTextField.getText());
+        }
+        client.addLoginListener(this);
+
+        try {
+            client.sendToServer(new LoginRequestEvent(usernameTextField.getText(), passwordTextField.getText()));
         } catch (IOException e) {
             logger.error("Error sending login request to server", e);
         }
     }
 
     public void cancelOnAction(ActionEvent event) {
-        try {
-            client.disconnect();
-        } catch (IOException e) {
-            logger.error("Error closing client connection", e);
+        if (client != null) {
+            try {
+                client.disconnect();
+            } catch (IOException e) {
+                logger.error("Error closing client connection", e);
+            }
         }
 
         closeWindow();
     }
 
     private void closeWindow() {
-        client.removeLoginListener(this);
-        Platform.runLater(() -> loginUsername.getScene().getWindow().hide());
+        if (client != null) client.removeLoginListener(this);
+        Platform.runLater(() -> usernameTextField.getScene().getWindow().hide());
     }
 
     @Override
     public void loginSucceeded(int id, String name) {
         Platform.runLater(() -> {
-//            GameGUIRunner gui = new GameGUIRunner();
             Stage stage = new Stage();
             try {
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/client-prototype.fxml"));
                 Parent root = loader.load();
                 stage.setScene(new Scene(root));
-//                stage.setScene(new Scene(gui.createContent()));
                 stage.setTitle("Hnefetafl");
                 stage.show();
                 stage.setOnCloseRequest(event -> {
@@ -112,5 +112,13 @@ public class LoginController implements LoginListener {
             a.setContentText("Unable to log in as user: " + name);
             a.showAndWait();
         });
+
+        if (client != null) {
+            try {
+                client.disconnect();
+            } catch (IOException e) {
+                logger.error("Error while disconnecting client after failed login attempt", e);
+            }
+        }
     }
 }

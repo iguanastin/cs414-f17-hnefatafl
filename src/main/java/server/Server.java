@@ -403,7 +403,7 @@ public class Server extends AbstractServer {
 
                 match.makeMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()]);
                 final boolean end = match.isOver();
-                match.swapTurn();
+                if (!end) match.swapTurn();
 
                 notifyMatchUpdate(user, match, enemy);
                 if (end) {
@@ -635,7 +635,12 @@ public class Server extends AbstractServer {
      * @throws SQLException When server is unable to connect to the database correctly, or the database throws an exception on initialization.
      */
     public static void main(String[] args) throws SQLException {
-        final int port = 54321;
+        int port = 54321;
+
+        if (args.length > 0) {
+            port = Integer.parseInt(args[0]);
+        }
+
         new Server(port);
     }
 

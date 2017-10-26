@@ -35,6 +35,8 @@ public class ClientController implements MatchListener, MoveListener {
     private final ArrayList<GameTab> gameTabs = new ArrayList<>();
 
     private final Logger logger = LoggerFactory.getLogger(ClientController.class);
+    private String host;
+    private int port;
 
 
     @FXML
