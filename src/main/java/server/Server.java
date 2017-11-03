@@ -3,6 +3,7 @@ package server;
 import Game.Match;
 import Game.MatchStatus;
 import common.*;
+import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +101,7 @@ public class Server extends AbstractServer {
         initHeartbeatThread();
 
         //TODO: Remove this, testing purposes
-        createUser("test@test.test", "user1", "1234");
+        createUser("test@test.test", "user1", "$2a$10$JbePj4na1LI6jpyNSCkrROT858ppNNX7Qc08RyYFyVBNpw1T6Xso");
         createUser("test2@test.test", "user2", "1234");
         createUser("test3@test.test", "user3", "1234");
     }
@@ -328,19 +329,42 @@ public class Server extends AbstractServer {
 
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
-        } else if (event instanceof LoginRequestEvent) {
+        }
+        else if (event instanceof LoginRequestEvent) {
             ///authenticate((LoginRequestEvent) event, client);
             //Auth not working yet, just let them in.
+            String loginUserName = ((LoginRequestEvent) event).getUsername();
+            String loginPassword = ((LoginRequestEvent) event).getPassword();
+
             for (User u : users) {
-                if (u.getName().equals(((LoginRequestEvent) event).getUsername())) {
-                    user = u;
+                if (u.getName().equals(loginUserName)){
+                    if(BCrypt.checkpw(loginPassword, u.getPassword())){
+                        //Password provided at login matches hashed password of user with the same name
+                        try {
+                            //TODO: Figure out what ID is  change the 0
+                            user = u;
+                            client.sendToClient(new LoginSuccessEvent(loginUserName, 0));
+                        }
+                        catch (IOException e){
+                            logger.error("Error sending login success event", e);
+                        }
+                    }
+                    else{
+                        //Password does not match. Tell the user
+                        try {
+                            client.sendToClient(new LoginFailedEvent("Password Provided for this Username was incorrect."));
+                        } catch (IOException e) {
+                            logger.error("Error sending login failed event", e);
+                        }
+                    }
+
                     break;
                 }
             }
 
             if (user == null) {
                 try {
-                    client.sendToClient(new LoginFailedEvent(((LoginRequestEvent) event).getUsername()));
+                    client.sendToClient(new LoginFailedEvent(loginUserName));
                 } catch (IOException e) {
                     logger.error("Error sending login failed event", e);
                 }

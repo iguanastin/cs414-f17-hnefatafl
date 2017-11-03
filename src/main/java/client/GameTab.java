@@ -1,6 +1,7 @@
 package client;
 
 import Game.*;
+
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -11,7 +12,8 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.RowConstraints;
+import javafx.scene.layout.RowConstraints;import javafx.geometry.HPos;
+import javafx.geometry.VPos;
 
 import java.util.ArrayList;
 import java.util.Collections;

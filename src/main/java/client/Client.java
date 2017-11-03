@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class Client extends AbstractClient {
+public class  Client extends AbstractClient {
 
     private boolean authenticated = false;
     private int userID = -1;
