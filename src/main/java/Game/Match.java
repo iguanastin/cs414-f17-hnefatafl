@@ -66,61 +66,41 @@ public class Match implements Serializable {
             //Check areas left of tile
             if (x != 0) {
                 for (int i = x - 1; i >= 0; i--) {
-                    //Check if the tile is the throne
-                    if (tiles[i][y].getType().equals(TileType.THRONE)) {
-                        break;
-                    }
-                    //Check if this tile has no piece on it
-                    else if (!(tiles[i][y].hasPiece())) {
+                    //Check if the tile has no piece on it and is not the throne
+                    if (!(tiles[i][y].hasPiece()) && !(tiles[i][y].getType().equals(TileType.THRONE)))
                         availableMoves.add(tiles[i][y]);
-                    } else {
+                    else
                         break;
-                    }
                 }
             }
             //Check areas right of tile
             if (x != 10) {
                 for (int i = x + 1; i <= 10; i++) {
-                    //Check if the tile is the throne
-                    if (tiles[i][y].getType().equals(TileType.THRONE)) {
-                        break;
-                    }
-                    //Check if this tile has no piece on it
-                    else if (!(tiles[i][y].hasPiece())) {
+                	//Check if the tile has no piece on it and is not the throne
+                    if (!(tiles[i][y].hasPiece()) && !(tiles[i][y].getType().equals(TileType.THRONE)))
                         availableMoves.add(tiles[i][y]);
-                    } else {
+                    else
                         break;
-                    }
                 }
             }
             //Check above tile
             if (y != 0) {
                 for (int i = y - 1; i >= 0; i--) {
-                    //Check if the tile is the throne
-                    if (tiles[x][i].getType().equals(TileType.THRONE)) {
-                        break;
-                    }
-                    //Check if this tile has no piece on it
-                    else if (!(tiles[x][i].hasPiece())) {
+                	//Check if the tile has no piece on it and is not the throne
+                    if (!(tiles[x][i].hasPiece()) && !(tiles[x][i].getType().equals(TileType.THRONE)))
                         availableMoves.add(tiles[x][i]);
-                    } else {
+                    else
                         break;
-                    }
                 }
             }
             //Check below tile
             if (y != 10) {
                 for (int i = y + 1; i <= 10; i++) {
-                    //Check if the tile is the throne
-                    if (tiles[x][i].getType().equals(TileType.THRONE)) {
-                        break;
-                    }
-                    //Check if this tile has no piece on it
-                    else if (!(tiles[x][i].hasPiece())) {
+                	//Check if the tile has no piece on it and is not the throne
+                    if (!(tiles[x][i].hasPiece()) && !(tiles[x][i].getType().equals(TileType.THRONE)))
                         availableMoves.add(tiles[x][i]);
-                    } else {
+                    else
                         break;
-                    }
                 }
             }
         }
@@ -169,125 +149,165 @@ public class Match implements Serializable {
         Tile[][] tiles = board.getTiles();
         //Capture top piece if capturable
         if (y > 1) {
-            if (tiles[x][y - 1].hasPiece()) {
-                //Check if top piece belongs to the enemy
-                if (!(capturerTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
-                    //Check if there a piece on the other side of that piece
-                    if (tiles[x][y - 2].hasPiece()) {
-                        //Check if that piece belongs to the capturer
-                        if (capturerTile.getPiece().getUser() == tiles[x][y - 2].getPiece().getUser()) {
-                            //Make sure that piece isn't a King
-                            if (!(tiles[x][y - 2].getPiece().isKing())) {
-                                //Perform additional calculations if piece to be captured is a king
-                                if (tiles[x][y - 1].getPiece().isKing()) {
-                                    //kingCaptured attempts to capture the king.
-                                    if (kingCapture(tiles[x][y - 1])) {
-                                        //If king was successfully captured
-                                        capturedTiles.add(tiles[x][y - 1]);
-                                    }
-                                }
-                                //Capture the piece
-                                else {
-                                    capturedTiles.add(tiles[x][y - 1]);
-                                    tiles[x][y - 1].removePiece();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+           if (aboveCapturable(capturerTile)) {
+        	   //If piece to be captured is a king
+               if (tiles[x][y - 1].getPiece().isKing()) {
+            	   //kingCapture attempts to capture the king.
+            	   if (kingCapture(tiles[x][y - 1])) {
+            		   //If king was successfully captured
+                       capturedTiles.add(tiles[x][y - 1]);
+                   }
+               }
+               //Capture the piece
+               else {
+            	   capturedTiles.add(tiles[x][y - 1]);
+                   tiles[x][y - 1].removePiece();
+               }
+           }
         }
         //Capture bottom piece if capturable
         if (y < 9) {
-            if (tiles[x][y + 1].hasPiece()) {
-                //Check if top piece belongs to the enemy
-                if (!(capturerTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
-                    //Check if there a piece on the other side of that piece
-                    if (tiles[x][y + 2].hasPiece()) {
-                        //Check if that piece belongs to the capturer
-                        if (capturerTile.getPiece().getUser() == tiles[x][y + 2].getPiece().getUser()) {
-                            //Make sure that piece isn't a King
-                            if (!(tiles[x][y + 2].getPiece().isKing())) {
-                                //Perform additional calculations if piece to be captured is a king
-                                if (tiles[x][y + 1].getPiece().isKing()) {
-                                    //kingCaptured attempts to capture the king.
-                                    if (kingCapture(tiles[x][y + 1])) {
-                                        //If king was successfully captured
-                                        capturedTiles.add(tiles[x][y + 1]);
-                                    }
-                                }
-                                //Capture the piece
-                                else {
-                                    capturedTiles.add(tiles[x][y + 1]);
-                                    tiles[x][y + 1].removePiece();
-                                }
-                            }
-                        }
+            if (belowCapturable(capturerTile)) {
+            	//If piece to be captured is a king
+                if (tiles[x][y + 1].getPiece().isKing()) {
+                	//kingCaptured attempts to capture the king.
+                    if (kingCapture(tiles[x][y + 1])) {
+                    	//If king was successfully captured
+                        capturedTiles.add(tiles[x][y + 1]);
                     }
+                }
+                //Capture the piece
+                else {
+                	capturedTiles.add(tiles[x][y + 1]);
+                    tiles[x][y + 1].removePiece();
                 }
             }
         }
         //Capture left piece if capturable
         if (x > 1) {
-            if (tiles[x - 1][y].hasPiece()) {
-                //Check if top piece belongs to the enemy
-                if (!(capturerTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
-                    //Check if there a piece on the other side of that piece
-                    if (tiles[x - 2][y].hasPiece()) {
-                        //Check if that piece belongs to the capturer
-                        if (capturerTile.getPiece().getUser() == tiles[x - 2][y].getPiece().getUser()) {
-                            //Make sure that piece isn't a King
-                            if (!(tiles[x - 2][y].getPiece().isKing())) {
-                                //Perform additional calculations if piece to be captured is a king
-                                if (tiles[x - 1][y].getPiece().isKing()) {
-                                    //kingCaptured attempts to capture the king.
-                                    if (kingCapture(tiles[x - 1][y])) {
-                                        //If king was successfully captured
-                                        capturedTiles.add(tiles[x - 1][y]);
-                                    }
-                                }
-                                //Capture the piece
-                                else {
-                                    capturedTiles.add(tiles[x - 1][y]);
-                                    tiles[x - 1][y].removePiece();
-                                }
-                            }
-                        }
+            if (leftCapturable(capturerTile)) {
+                //If piece to be captured is a king
+                if (tiles[x - 1][y].getPiece().isKing()) {
+                    //kingCaptured attempts to capture the king.
+                    if (kingCapture(tiles[x - 1][y])) {
+                        //If king was successfully captured
+                        capturedTiles.add(tiles[x - 1][y]);
                     }
+                }
+                //Capture the piece
+                else {
+                    capturedTiles.add(tiles[x - 1][y]);
+                    tiles[x - 1][y].removePiece();
                 }
             }
         }
         //Capture right piece if capturable
         if (x < 9) {
-            if (tiles[x + 1][y].hasPiece()) {
-                //Check if top piece belongs to the enemy
-                if (!(capturerTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
-                    //Check if there a piece on the other side of that piece
-                    if (tiles[x + 2][y].hasPiece()) {
-                        //Check if that piece belongs to the capturer
-                        if (capturerTile.getPiece().getUser() == tiles[x + 2][y].getPiece().getUser()) {
-                            //Make sure that piece isn't a King
-                            if (!(tiles[x + 2][y].getPiece().isKing())) {
-                                //Perform additional calculations if piece to be captured is a king
-                                if (tiles[x + 1][y].getPiece().isKing()) {
-                                    //kingCaptured attempts to capture the king.
-                                    if (kingCapture(tiles[x + 1][y])) {
-                                        //If king was successfully captured
-                                        capturedTiles.add(tiles[x + 1][y]);
-                                    }
-                                }
-                                //Capture the piece
-                                else {
-                                    capturedTiles.add(tiles[x + 1][y]);
-                                    tiles[x + 1][y].removePiece();
-                                }
-                            }
-                        }
+            if(rightCapturable(capturerTile)) {
+                //If piece to be captured is a king
+                if (tiles[x + 1][y].getPiece().isKing()) {
+                	//kingCaptured attempts to capture the king.
+                    if (kingCapture(tiles[x + 1][y])) {
+                    	//If king was successfully captured
+                        capturedTiles.add(tiles[x + 1][y]);
                     }
+                }
+                //Capture the piece
+                else {
+                	capturedTiles.add(tiles[x + 1][y]);
+                	tiles[x + 1][y].removePiece();
                 }
             }
         }
         return capturedTiles;
+    }
+    
+    private boolean aboveCapturable(Tile capturerTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = capturerTile.getX();
+    	int y = capturerTile.getY();
+    	if (tiles[x][y - 1].hasPiece()) {
+            //Check if top piece belongs to the enemy
+            if (!(capturerTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
+                //Check if there a piece on the other side of that piece
+                if (tiles[x][y - 2].hasPiece()) {
+                    //Check if that piece belongs to the capturer
+                    if (capturerTile.getPiece().getUser() == tiles[x][y - 2].getPiece().getUser()) {
+                        //Make sure that piece isn't a King
+                        if (!(tiles[x][y - 2].getPiece().isKing())) {
+                        	return true;
+                        }
+                    }
+                }
+            }
+    	}
+        return false;
+    }
+    
+    private boolean belowCapturable(Tile capturerTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = capturerTile.getX();
+    	int y = capturerTile.getY();
+    	if (tiles[x][y + 1].hasPiece()) {
+            //Check if top piece belongs to the enemy
+            if (!(capturerTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
+                //Check if there a piece on the other side of that piece
+                if (tiles[x][y + 2].hasPiece()) {
+                    //Check if that piece belongs to the capturer
+                    if (capturerTile.getPiece().getUser() == tiles[x][y + 2].getPiece().getUser()) {
+                        //Make sure that piece isn't a King
+                        if (!(tiles[x][y + 2].getPiece().isKing())) {
+                        	return true;
+                        }
+                    }
+                }
+            }
+    	}
+        return false;
+    }
+    
+    private boolean leftCapturable(Tile capturerTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = capturerTile.getX();
+    	int y = capturerTile.getY();
+    	if (tiles[x - 1][y].hasPiece()) {
+            //Check if top piece belongs to the enemy
+            if (!(capturerTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
+                //Check if there a piece on the other side of that piece
+                if (tiles[x - 2][y].hasPiece()) {
+                    //Check if that piece belongs to the capturer
+                    if (capturerTile.getPiece().getUser() == tiles[x - 2][y].getPiece().getUser()) {
+                        //Make sure that piece isn't a King
+                        if (!(tiles[x - 2][y].getPiece().isKing())) {
+                        	return true;
+                        }
+                    }
+                }
+            }
+    	}
+    	return false;
+    }
+
+    private boolean rightCapturable(Tile capturerTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = capturerTile.getX();
+    	int y = capturerTile.getY();
+    	if (tiles[x + 1][y].hasPiece()) {
+            //Check if top piece belongs to the enemy
+            if (!(capturerTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
+                //Check if there a piece on the other side of that piece
+                if (tiles[x + 2][y].hasPiece()) {
+                    //Check if that piece belongs to the capturer
+                    if (capturerTile.getPiece().getUser() == tiles[x + 2][y].getPiece().getUser()) {
+                        //Make sure that piece isn't a King
+                        if (!(tiles[x + 2][y].getPiece().isKing())) {
+                        	return true;
+                        }
+                    }
+                }
+            }
+    	}
+    	return false;
     }
 
     //Captures the king if surrounded.  Returns true is king was captured, false otherwise.
@@ -297,69 +317,88 @@ public class Match implements Serializable {
         boolean below = false;
         boolean left = false;
         boolean right = false;
-        Tile[][] tiles = board.getTiles();
         int x = kingTile.getX();
         int y = kingTile.getY();
-        //Check the tile above
-        if (y != 0) {
-            //If it's the throne
-            if (tiles[x][y - 1].getType().equals(TileType.THRONE)) {
-                above = true;
-            }
-            //Otherwise if a piece is there
-            else if (tiles[x][y - 1].hasPiece()) {
-                //Check if piece on tile belongs to the enemy
-                if (!(kingTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
-                    above = true;
-                }
-            }
-        }
-        //Check the tile below
-        if (y != 10) {
-            //If it's the throne
-            if (tiles[x][y + 1].getType().equals(TileType.THRONE)) {
-                below = true;
-            }
-            //Otherwise if a piece is there
-            else if (tiles[x][y + 1].hasPiece()) {
-                //Check if piece on tile belongs to the enemy
-                if (!(kingTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
-                    below = true;
-                }
-            }
-        }
-        //Check the tile to the left
-        if (x != 0) {
-            //If it's the throne
-            if (tiles[x - 1][y].getType().equals(TileType.THRONE)) {
-                left = true;
-            }
-            //Otherwise if a piece is there
-            else if (tiles[x - 1][y].hasPiece()) {
-                //Check if piece on tile belongs to the enemy
-                if (!(kingTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
-                    left = true;
-                }
-            }
-        }
-        //Check the tile to the right
-        if (x != 10) {
-            //If it's the throne
-            if (tiles[x + 1][y].getType().equals(TileType.THRONE)) {
-                right = true;
-            }
-            //Otherwise if a piece is there
-            else if (tiles[x + 1][y].hasPiece()) {
-                //Check if piece on tile belongs to the enemy
-                if (!(kingTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
-                    right = true;
-                }
-            }
-        }
+        //Check the tiles above, below, left and right
+        if (y != 0) above = kingCheckAbove(kingTile);
+        if (y != 10) below = kingCheckBelow(kingTile);
+        if (x != 0)  left = kingCheckLeft(kingTile);
+        if (x != 10) right = kingCheckRight(kingTile);
         if (above && below && left && right) {
             kingTile.removePiece();
             status = MatchStatus.ATTACKER_WIN;
             return true;
+        }
+        return false;
+    }
+    private boolean kingCheckAbove(Tile kingTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = kingTile.getX();
+    	int y = kingTile.getY();
+    	//If it's the throne
+        if (tiles[x][y - 1].getType().equals(TileType.THRONE)) {
+            return true;
+        }
+        //Otherwise if a piece is there
+        else if (tiles[x][y - 1].hasPiece()) {
+            //Check if piece on tile belongs to the enemy
+            if (!(kingTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean kingCheckBelow(Tile kingTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = kingTile.getX();
+    	int y = kingTile.getY();
+    	//If it's the throne
+        if (tiles[x][y + 1].getType().equals(TileType.THRONE)) {
+            return true;
+        }
+        //Otherwise if a piece is there
+        else if (tiles[x][y + 1].hasPiece()) {
+            //Check if piece on tile belongs to the enemy
+            if (!(kingTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean kingCheckLeft(Tile kingTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = kingTile.getX();
+    	int y = kingTile.getY();
+    	//If it's the throne
+        if (tiles[x - 1][y].getType().equals(TileType.THRONE)) {
+            return true;
+        }
+        //Otherwise if a piece is there
+        else if (tiles[x - 1][y].hasPiece()) {
+            //Check if piece on tile belongs to the enemy
+            if (!(kingTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private boolean kingCheckRight(Tile kingTile) {
+    	Tile[][] tiles = board.getTiles();
+    	int x = kingTile.getX();
+    	int y = kingTile.getY();
+    	//If it's the throne
+        if (tiles[x + 1][y].getType().equals(TileType.THRONE)) {
+            return true;
+        }
+        //Otherwise if a piece is there
+        else if (tiles[x + 1][y].hasPiece()) {
+            //Check if piece on tile belongs to the enemy
+            if (!(kingTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
+                return true;
+            }
         }
         return false;
     }
