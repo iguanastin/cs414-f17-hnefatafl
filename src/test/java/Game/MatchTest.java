@@ -120,7 +120,7 @@ public class MatchTest {
 
     //Tests capturing against a king
     @Test
-    public void testKingCapture() {
+    public void testKingCaptureLeft() {
         Tile[][] moves = tiles;
         removeAllExceptKing(moves);
         //Surround King with enemy pieces
@@ -132,7 +132,49 @@ public class MatchTest {
         match.makeMove(moves[4][5], moves[4][5]);
         assertFalse(moves[5][5].hasPiece());
     }
-
+    
+    @Test
+    public void testKingCaptureRight() {
+        Tile[][] moves = tiles;
+        removeAllExceptKing(moves);
+        //Surround King with enemy pieces
+        moves[4][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][4].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[6][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][6].setPiece(new Piece(attacker, Color.BLACK, false));
+        //Capture the king with an attacker piece by moving it to the spot it's already at.
+        match.makeMove(moves[6][5], moves[6][5]);
+        assertFalse(moves[5][5].hasPiece());
+    }
+    
+    @Test
+    public void testKingCaptureAbove() {
+        Tile[][] moves = tiles;
+        removeAllExceptKing(moves);
+        //Surround King with enemy pieces
+        moves[4][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][4].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[6][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][6].setPiece(new Piece(attacker, Color.BLACK, false));
+        //Capture the king with an attacker piece by moving it to the spot it's already at.
+        match.makeMove(moves[5][4], moves[5][4]);
+        assertFalse(moves[5][5].hasPiece());
+    }
+    
+    @Test
+    public void testKingCaptureBelow() {
+        Tile[][] moves = tiles;
+        removeAllExceptKing(moves);
+        //Surround King with enemy pieces
+        moves[4][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][4].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[6][5].setPiece(new Piece(attacker, Color.BLACK, false));
+        moves[5][6].setPiece(new Piece(attacker, Color.BLACK, false));
+        //Capture the king with an attacker piece by moving it to the spot it's already at.
+        match.makeMove(moves[5][6], moves[5][6]);
+        assertFalse(moves[5][5].hasPiece());
+    }
+    
     @Test
     public void testAttackerWin() {
         Tile[][] moves = tiles;
