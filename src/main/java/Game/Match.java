@@ -134,7 +134,9 @@ public class Match implements Serializable {
         //Check if the king has moved to the goal
         if (toMove.isKing() && toTile.getType().equals(TileType.GOAL)) {
             status = MatchStatus.DEFENDER_WIN;
-        } else {
+        } 
+        //If not king, capture pieces
+        else if (!(toMove.isKing())){
             //Captures any pieces available for capture by this move
             capturedTiles = capture(toTile);
         }
