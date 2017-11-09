@@ -11,7 +11,6 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.LineBuilder;
 import javafx.stage.Stage;
 import java.util.HashSet;
-import server.User;
 
 // AUTHOR: Cole Juracek
 // Credit to "JavaFX Game: Checkers" (https://www.youtube.com/watch?v=6S6km5duBrM) for guidance/structure.
