@@ -3,6 +3,8 @@ package Game;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class Match implements Serializable {
     private Board board;
@@ -56,8 +58,8 @@ public class Match implements Serializable {
         }
     }
 
-    public ArrayList<Tile> getAvaiableMoves(Tile tile) {
-        ArrayList<Tile> availableMoves = new ArrayList<Tile>();
+    public List<Tile> getAvaiableMoves(Tile tile) {
+        List<Tile> availableMoves = new ArrayList<>();
         //Confirm tile has a piece on it
         if (tile.hasPiece()) {
             int x = tile.getX();
@@ -118,16 +120,12 @@ public class Match implements Serializable {
         }
 
         // Check that the endTile was in the list of valid moves
-        if(!(getAvaiableMoves(startTile).contains(endTile))) {
-            return false;
-        }
-
-        return true;
+        return getAvaiableMoves(startTile).contains(endTile);
     }
 
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
-    public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
-        HashSet<Tile> capturedTiles = new HashSet<Tile>();
+    public Set<Tile> makeMove(Tile fromTile, Tile toTile) {
+        Set<Tile> capturedTiles = new HashSet<>();
         Piece toMove = fromTile.getPiece();
         fromTile.removePiece();
         toTile.setPiece(toMove);
@@ -144,8 +142,8 @@ public class Match implements Serializable {
     }
 
     //Processes capturing performed by a piece, called by makeMove
-    private HashSet<Tile> capture(Tile capturerTile) {
-        HashSet<Tile> capturedTiles = new HashSet<Tile>();
+    private Set<Tile> capture(Tile capturerTile) {
+        Set<Tile> capturedTiles = new HashSet<>();
         int x = capturerTile.getX();
         int y = capturerTile.getY();
         Tile[][] tiles = board.getTiles();
