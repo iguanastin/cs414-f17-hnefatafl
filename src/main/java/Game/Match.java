@@ -118,11 +118,7 @@ public class Match implements Serializable {
         }
 
         // Check that the endTile was in the list of valid moves
-        if(!(getAvaiableMoves(startTile).contains(endTile))) {
-            return false;
-        }
-
-        return true;
+        return getAvaiableMoves(startTile).contains(endTile);
     }
 
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
