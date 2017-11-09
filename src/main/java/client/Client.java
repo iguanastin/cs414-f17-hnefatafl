@@ -7,14 +7,15 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Client extends AbstractClient {
 
     private boolean authenticated = false;
     private int userID = -1;
 
-    private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
-    private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
+    private final List<LoginListener> loginListeners = new ArrayList<>();
+    private final List<MatchListener> matchListeners = new ArrayList<>();
 
 
     /**

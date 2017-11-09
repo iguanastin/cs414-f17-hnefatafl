@@ -1,6 +1,5 @@
 package Game;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.*;
@@ -18,11 +17,11 @@ public class MatchTest {
     private Tile[][] tiles;
 
     private Tile[][] removeAllExceptKing(Tile[][] tiles) {
-        for (Tile[] tile : tiles) {
-            for (int j = 0; j < tile.length; j++) {
-                if (tile[j].hasPiece()) {
-                    if (!(tile[j].getPiece().isKing())) {
-                        tile[j].removePiece();
+        for (Tile[] tileList : tiles) {
+            for (Tile tile : tileList) {
+                if (tile.hasPiece()) {
+                    if (!(tile.getPiece().isKing())) {
+                        tile.removePiece();
                     }
                 }
             }

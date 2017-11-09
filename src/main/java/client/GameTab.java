@@ -15,6 +15,7 @@ import javafx.scene.layout.RowConstraints;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 
 public class GameTab extends Tab {
@@ -22,7 +23,7 @@ public class GameTab extends Tab {
     private Match match;
     private GridPane grid;
 
-    private final ArrayList<MoveListener> moveListeners = new ArrayList<>();
+    private final List<MoveListener> moveListeners = new ArrayList<>();
 
     private final int userId;
 
@@ -99,7 +100,7 @@ public class GameTab extends Tab {
                             cc.putString(pieceGUI.toString());
                             db.setContent(cc);
 
-                            final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
+                            final List<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
                             for (Node node : grid.getChildren()) {
                                 if (node instanceof TileGUI) {
                                     if (moves.contains(match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()])) {
