@@ -101,7 +101,7 @@ public class Server extends AbstractServer {
         initHeartbeatThread();
 
         //TODO: Remove this, testing purposes
-        createUser("test@test.test", "user1", "$2a$10$JbePj4na1LI6jpyNSCkrROT858ppNNX7Qc08RyYFyVBNpw1T6Xso");
+        createUser("test@test.test", "user1", "1234");
         createUser("test2@test.test", "user2", "1234");
         createUser("test3@test.test", "user3", "1234");
     }
@@ -218,6 +218,7 @@ public class Server extends AbstractServer {
         try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
             s.setNString(1, name);
             s.setNString(2, email);
+            password = BCrypt.hashpw(password, BCrypt.gensalt());
             s.setNString(3, password);
             s.executeUpdate();
             s.close();
@@ -341,9 +342,8 @@ public class Server extends AbstractServer {
                     if(BCrypt.checkpw(loginPassword, u.getPassword())){
                         //Password provided at login matches hashed password of user with the same name
                         try {
-                            //TODO: Figure out what ID is  change the 0
                             user = u;
-                            client.sendToClient(new LoginSuccessEvent(loginUserName, 0));
+                            client.sendToClient(new LoginSuccessEvent(loginUserName, u.getId()));
                         }
                         catch (IOException e){
                             logger.error("Error sending login success event", e);
@@ -374,6 +374,25 @@ public class Server extends AbstractServer {
                     client.sendToClient(new LoginSuccessEvent(user.getName(), user.getId()));
                 } catch (IOException e) {
                     logger.error("Error sending login success event", e);
+                }
+            }
+        }else if(event instanceof RegisterRequestEvent){
+            String registerEmail = ((RegisterRequestEvent) event).getEmail();
+            String registerUserName = ((RegisterRequestEvent) event).getUsername();
+            String registerPassword = ((RegisterRequestEvent) event).getPassword();
+
+            if(users.contains(registerUserName)){
+                try {
+                    client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username is already taken."));
+                } catch (IOException e) {
+                    logger.error("Error sending register failed event", e);
+                }
+            }else{
+                user.setClient(client);
+                try {
+                    client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
+                } catch (IOException e) {
+                    logger.error("Error sending register success event", e);
                 }
             }
         }

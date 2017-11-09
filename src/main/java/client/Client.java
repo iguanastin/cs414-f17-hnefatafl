@@ -2,6 +2,12 @@ package client;
 
 
 import common.*;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +75,18 @@ public class  Client extends AbstractClient {
 
             //Notify login listeners
             loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
-        } else if (event instanceof MatchStartEvent) {
+        }else if (event instanceof RegisterFailedEvent){
+            RegisterFailedEvent rfEvent = (RegisterFailedEvent) event;
+
+            //Notify login listeners
+            loginListeners.forEach(listener -> listener.registerFailed(rfEvent.getEmail(), rfEvent.getUsername(), rfEvent.getError()));
+        }else if (event instanceof RegisterSuccessEvent){
+            RegisterSuccessEvent rsEvent = (RegisterSuccessEvent) event;
+            userID = rsEvent.getId();
+
+            //Notify login listeners
+            loginListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getUsername(), rsEvent.getPassword()));
+        }else if (event instanceof MatchStartEvent) {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
