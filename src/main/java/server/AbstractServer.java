@@ -150,9 +150,9 @@ public abstract class AbstractServer implements Runnable {
         } finally {
             // Close the client sockets of the already connected clients
             Thread[] clientThreadList = getClientConnections();
-            for (int i = 0; i < clientThreadList.length; i++) {
+            for (Thread clientThread : clientThreadList) {
                 try {
-                    ((ConnectionToClient) clientThreadList[i]).close();
+                    ((ConnectionToClient) clientThread).close();
                 }
                 // Ignore all exceptions when closing clients.
                 catch (Exception ex) {
@@ -177,9 +177,9 @@ public abstract class AbstractServer implements Runnable {
     public void sendToAllClients(Object msg) {
         Thread[] clientThreadList = getClientConnections();
 
-        for (int i = 0; i < clientThreadList.length; i++) {
+        for (Thread clientThread : clientThreadList) {
             try {
-                ((ConnectionToClient) clientThreadList[i]).sendToClient(msg);
+                ((ConnectionToClient) clientThread).sendToClient(msg);
             } catch (Exception ex) {
             }
         }

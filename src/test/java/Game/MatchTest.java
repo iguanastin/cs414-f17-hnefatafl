@@ -1,6 +1,7 @@
 package Game;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.*;
 
@@ -17,11 +18,11 @@ public class MatchTest {
     private Tile[][] tiles;
 
     private Tile[][] removeAllExceptKing(Tile[][] tiles) {
-        for (int i = 0; i < tiles.length; i++) {
-            for (int j = 0; j < tiles[i].length; j++) {
-                if (tiles[i][j].hasPiece()) {
-                    if (!(tiles[i][j].getPiece().isKing())) {
-                        tiles[i][j].removePiece();
+        for (Tile[] tile : tiles) {
+            for (int j = 0; j < tile.length; j++) {
+                if (tile[j].hasPiece()) {
+                    if (!(tile[j].getPiece().isKing())) {
+                        tile[j].removePiece();
                     }
                 }
             }
@@ -59,7 +60,7 @@ public class MatchTest {
         Tile[][] moves = tiles;
         removeAllExceptKing(moves);
         Tile kingTile = moves[5][5];
-        ArrayList<Tile> kingMoves = match.getAvaiableMoves(kingTile);
+        List<Tile> kingMoves = match.getAvaiableMoves(kingTile);
         //Simple test
         assertEquals("[(4, 5), (3, 5), (2, 5), (1, 5), (0, 5), (6, 5), (7, 5), (8, 5), (9, 5), (10, 5), (5, 4), (5, 3), (5, 2), (5, 1), (5, 0), (5, 6), (5, 7), (5, 8), (5, 9), (5, 10)]", kingMoves.toString());
         //Move the King 1 space away from the throne
