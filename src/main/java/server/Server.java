@@ -388,6 +388,7 @@ public class Server extends AbstractServer {
                     logger.error("Error sending register failed event", e);
                 }
             }else{
+                user = createUser(registerEmail, registerUserName, registerPassword);
                 user.setClient(client);
                 try {
                     client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));

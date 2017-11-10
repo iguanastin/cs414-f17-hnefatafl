@@ -35,17 +35,15 @@ public class LoginController implements LoginListener {
 
     @FXML
     public void initialize() {
-        Platform.runLater(() -> {
-            usernameTextField.getScene().getWindow().setOnCloseRequest(event -> {
-                if (client != null) {
-                    try {
-                        client.disconnect();
-                    } catch (IOException e) {
-                        logger.error("Error closing client connection", e);
-                    }
+        Platform.runLater(() -> usernameTextField.getScene().getWindow().setOnCloseRequest(event -> {
+            if (client != null) {
+                try {
+                    client.disconnect();
+                } catch (IOException e) {
+                    logger.error("Error closing client connection", e);
                 }
-            });
-        });
+            }
+        }));
     }
 
     public void loginOnAction(ActionEvent event) {
@@ -65,13 +63,6 @@ public class LoginController implements LoginListener {
     }
 
     public void registerUserAction(ActionEvent event){
-        try {
-            client = new Client(hostTextField.getText(), Integer.parseInt(portTextField.getText()));
-        } catch (IOException e) {
-            logger.error("Error connecting to server " + hostTextField.getText() + ":" + portTextField.getText(), e);
-            loginFailed(usernameTextField.getText());
-        }
-
         try {
             String registerEmail = registerEmailField.getText();
             String registerUsername = registerUsernameField.getText();
