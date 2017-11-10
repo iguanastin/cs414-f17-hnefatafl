@@ -65,7 +65,22 @@ public class LoginController implements LoginListener {
     }
 
     public void registerUserAction(ActionEvent event){
+        try {
+            client = new Client(hostTextField.getText(), Integer.parseInt(portTextField.getText()));
+        } catch (IOException e) {
+            logger.error("Error connecting to server " + hostTextField.getText() + ":" + portTextField.getText(), e);
+            loginFailed(usernameTextField.getText());
+        }
 
+        try {
+            String registerEmail = registerEmailField.getText();
+            String registerUsername = registerUsernameField.getText();
+            String registerPassword = registerPasswordField.getText();
+
+            client.sendToServer(new RegisterRequestEvent(registerEmail, registerUsername, registerPassword));
+        } catch (IOException e) {
+            logger.error("Error sending register request to server", e);
+        }
     }
 
     public void openRegisterAction() {
