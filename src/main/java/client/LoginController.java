@@ -1,6 +1,5 @@
 package client;
 
-import common.RegisterRequestEvent;
 import common.event.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -69,8 +68,10 @@ public class LoginController implements LoginListener {
                 Parent root = loader.load();
                 stage.setScene(new Scene(root));
                 stage.setTitle("Register");
-                stage.show();
-
+                Stage loginStage = (Stage) usernameTextField.getScene().getWindow();
+                loginStage.hide();
+                stage.showAndWait();
+                loginStage.show();
             } catch (IOException e) {
                 logger.error("Error loading FXML doc", e);
             }

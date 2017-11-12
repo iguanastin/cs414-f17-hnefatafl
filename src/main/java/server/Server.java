@@ -4,13 +4,11 @@ import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
 import common.event.invite.*;
+import common.event.login.*;
 import common.game.FinishedMatch;
 import common.game.Match;
 import common.game.MatchStatus;
 import common.*;
-import common.event.login.LoginFailedEvent;
-import common.event.login.LoginRequestEvent;
-import common.event.login.LoginSuccessEvent;
 import common.event.match.*;
 import common.event.profile.*;
 import org.mindrot.jbcrypt.BCrypt;
@@ -362,6 +360,12 @@ public class Server extends AbstractServer {
                 handleAcceptInviteEvent((AcceptInviteEvent) event, user);
             } else if (event instanceof DeclineInviteEvent) {
                 handleDeclineInviteEvent((DeclineInviteEvent) event, user);
+            } else if (event instanceof UnregisterRequestEvent) {
+                try {
+                    unregister(user);
+                } catch (Exception e) {
+                    logger.error("Error unregistering user", e);
+                }
             }
         }
     }
@@ -443,7 +447,13 @@ public class Server extends AbstractServer {
 
         for (User u : users) {
             if (u.getName().equals(loginUserName)) {
-                if (BCrypt.checkpw(loginPassword, u.getPassword())) {
+                if (u.isUnregistered()) {
+                    try {
+                        client.sendToClient(new LoginFailedEvent("This user is unregistered and cannot be used"));
+                    } catch (IOException e) {
+                        logger.error("Error sending login failed even", e);
+                    }
+                } else if (BCrypt.checkpw(loginPassword, u.getPassword())) {
                     //Password provided at login matches hashed password of user with the same name
                     user = u;
                 } else {
@@ -653,6 +663,8 @@ public class Server extends AbstractServer {
     }
 
     private Invitation inviteUser(User sender, User target) throws SQLException {
+        if (target.isUnregistered()) return null;
+
         PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE (p1_id=? AND p2_id=?) OR (p2_id=? AND p1_id=?)");
         s.setInt(1, sender.getId());
         s.setInt(2, target.getId());
@@ -715,6 +727,29 @@ public class Server extends AbstractServer {
         } catch (SQLException e) {
             logger.error("Error getting invitations from db", e);
             return invites;
+        }
+    }
+
+    private void unregister(User user) throws IOException, SQLException {
+        user.unregister();
+        commitChangedUser(user);
+        user.getClient().close();
+
+        for (Match match: matches) {
+            if (match.getAttacker() == user.getId()) {
+                endMatch(match, FinishedMatch.ATTACKER_QUIT);
+            } else if (match.getDefender() == user.getId()) {
+                endMatch(match, FinishedMatch.DEFENDER_QUIT);
+            }
+        }
+
+        ResultSet rs = dbConnection.prepareStatement("SELECT * FROM invites WHERE p1_id=? OR p2_id=?;").executeQuery();
+        while (rs.next()) {
+            if (rs.getInt("p1_id") == user.getId()) {
+                deleteInvitation(user, getUser(rs.getInt("p2_id")));
+            } else {
+                declineInvitation(getUser(rs.getInt("p2_id")), user);
+            }
         }
     }
 

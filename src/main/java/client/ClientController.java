@@ -3,6 +3,7 @@ package client;
 
 import common.Invitation;
 import common.event.invite.*;
+import common.event.login.UnregisterRequestEvent;
 import common.game.Match;
 import common.event.match.PlayerMoveEvent;
 import common.Profile;
@@ -238,4 +239,34 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     public void inviteAccepted(Invitation invite) {
 
     }
+
+    public void unregisterMenuItemOnAction(ActionEvent event) {
+        try {
+            client.sendToServer(new UnregisterRequestEvent());
+            logout();
+        } catch (IOException e) {
+            logger.error("Error sending unregister request event", e);
+        }
+    }
+
+    private void logout() throws IOException {
+        client.disconnect();
+
+        tabPane.getScene().getWindow().hide();
+
+        Parent root = FXMLLoader.load(getClass().getResource("/login-prototype.fxml"));
+        Stage stage = new Stage();
+        stage.setScene(new Scene(root));
+        stage.setTitle("Hnefatafl");
+        stage.show();
+    }
+
+    public void logoutMenuItemOnAction(ActionEvent event) {
+        try {
+            logout();
+        } catch (IOException e) {
+            logger.error("Error loading login window fxml", e);
+        }
+    }
+
 }
