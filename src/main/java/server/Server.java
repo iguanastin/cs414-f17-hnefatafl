@@ -1,5 +1,6 @@
 package server;
 
+import common.game.FinishedMatch;
 import common.game.Match;
 import common.game.MatchStatus;
 import common.*;
@@ -349,8 +350,14 @@ public class Server extends AbstractServer {
                 handlePlayerMoveEvent((PlayerMoveEvent) event, user);
             } else if (event instanceof InviteToMatchEvent) {
                 User enemy = getUser(((InviteToMatchEvent) event).getName());
-                if (enemy != null && getMatch(user.getId(), enemy.getId()) == null) {
-                    startMatch(user, enemy);
+                if (enemy != null) {
+                    if (getMatch(user.getId(), enemy.getId()) == null) {
+                        startMatch(user, enemy);
+                    } else {
+                        //TODO Send error stating that a match already exists between these two users
+                    }
+                } else {
+                    user.send(new NoSuchUserEvent(((InviteToMatchEvent) event).getName()));
                 }
 
                 //TODO Make this actually invite and check for bad cases
@@ -359,6 +366,17 @@ public class Server extends AbstractServer {
                     if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
                         user.send(new MatchStartEvent(match));
                     }
+                }
+            } else if (event instanceof RequestProfileEvent) {
+                try {
+                    User target = getUser(((RequestProfileEvent) event).getUsername());
+                    if (target != null) {
+                        user.send(new SendProfileEvent(new Profile(getMatchHistory(target.getId()), target.getId(), target.getName())));
+                    } else {
+                        user.send(new NoSuchUserEvent(((RequestProfileEvent) event).getUsername()));
+                    }
+                } catch (SQLException e) {
+                    logger.error("Error getting match history for user: " + ((RequestProfileEvent) event).getUsername(), e);
                 }
             }
         }
@@ -414,23 +432,38 @@ public class Server extends AbstractServer {
         }
     }
 
+    private FinishedMatch endMatch(Match match) {
+        int reason;
+        if (match.getStatus() == MatchStatus.DEFENDER_WIN) {
+            reason = FinishedMatch.DEFENDER_WIN;
+        } else if (match.getStatus() == MatchStatus.ATTACKER_WIN) {
+            reason = FinishedMatch.ATTACKER_WIN;
+        } else {
+            logger.error("Match is not in an end-state, cannot be ended");
+            return null;
+        }
+
+        return endMatch(match, reason);
+    }
+
     /**
      * Ends a match and notifies users
      *
      * @param match Match to end
      */
-    private void endMatch(Match match) {
+    private FinishedMatch endMatch(Match match, int reason) {
         logger.info("Match finished " + match.getAttacker() + "v" + match.getDefender());
 
         synchronized (matches) {
             matches.remove(match);
         }
 
-        int matchResult = 0; //TODO Set up actual match end enums
-        int matchWinner = match.getAttacker();
-        if (match.getStatus().equals(MatchStatus.DEFENDER_WIN)) matchWinner = match.getDefender();
-
-        createMatchHistory(match, matchResult, matchWinner);
+        int winner;
+        if (reason == FinishedMatch.ATTACKER_WIN || reason == FinishedMatch.DEFENDER_QUIT) {
+            winner = match.getAttacker();
+        } else {
+            winner = match.getDefender();
+        }
 
         User user = getUser(match.getAttacker());
         if (user != null && user.isLoggedIn()) {
@@ -442,23 +475,51 @@ public class Server extends AbstractServer {
             user.resetOutputStream();
             user.send(new MatchFinishEvent(match));
         }
+
+        return createMatchHistory(match, reason, winner);
     }
 
-    private void createMatchHistory(Match match, int matchResult, int matchWinner) {
+    private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
         try {
-            PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?);");
+            PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(id, p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?,?);");
 
-            s.setInt(1, match.getAttacker());
-            s.setInt(2, match.getDefender());
-            s.setInt(3, matchResult);
-            s.setInt(4, matchWinner);
+            int id = -1;
+
+            //Get last used ID from db
+            ResultSet rs = dbConnection.createStatement().executeQuery("SELECT TOP 1 id FROM played ORDER BY id DESC;");
+            if (rs.next()) id = rs.getInt("id");
+
+            id++;
+
+            s.setInt(1, id);
+            s.setInt(2, match.getAttacker());
+            s.setInt(3, match.getDefender());
+            s.setInt(4, matchResult);
+            s.setInt(5, matchWinner);
 
             s.executeUpdate();
-
             s.close();
+
+            return new FinishedMatch(id, match.getAttacker(), match.getDefender(), matchWinner, matchResult);
         } catch (SQLException e) {
             logger.error("Error committing game history to db", e);
+            return null;
         }
+    }
+
+    private ArrayList<FinishedMatch> getMatchHistory(int userID) throws SQLException {
+        ArrayList<FinishedMatch> matches = new ArrayList<>();
+
+        PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM played WHERE p1_id=? OR p2_id=?");
+        s.setInt(1, userID);
+        s.setInt(2, userID);
+
+        ResultSet rs = s.executeQuery();
+        while (rs.next()) {
+            matches.add(new FinishedMatch(rs.getInt("id"), rs.getInt("p1_id"), rs.getInt("p2_id"), rs.getInt("winner_id"), rs.getInt("end_result")));
+        }
+
+        return matches;
     }
 
     /**

@@ -1,15 +1,17 @@
 package client;
 
 
+import common.*;
 import common.game.Match;
-import common.InviteToMatchEvent;
-import common.PlayerMoveEvent;
-import common.RequestCurrentGamesEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ClientController implements MatchListener, MoveListener {
+public class ClientController implements MatchListener, MoveListener, ServerUtilListener {
 
     public ListView<String> invitesListView;
     public ListView<String> gamesListView;
@@ -63,6 +65,7 @@ public class ClientController implements MatchListener, MoveListener {
 
         this.client = client;
         client.addMatchListener(this);
+        client.addServerUtilListener(this);
 
         //Request current matches on new client
         try {
@@ -73,7 +76,11 @@ public class ClientController implements MatchListener, MoveListener {
     }
 
     public void profileButtonOnAction(ActionEvent event) {
-        //TODO
+        try {
+            client.sendToServer(new RequestProfileEvent(usernameTextField.getText()));
+        } catch (IOException e) {
+            logger.error("Error sending history request for user: " + usernameTextField.getText(), e);
+        }
     }
 
     public void inviteButtonOnAction(ActionEvent event) {
@@ -160,4 +167,28 @@ public class ClientController implements MatchListener, MoveListener {
         }
     }
 
+    @Override
+    public void profileReceived(Profile profile) {
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/profile-prototype.fxml"));
+                Parent root = loader.load();
+                Stage stage = new Stage();
+                stage.setScene(new Scene(root));
+                stage.show();
+                ProfileController controller = loader.getController();
+                controller.setProfile(profile);
+            } catch (IOException e) {
+                logger.error("Error opening profile fxml", e);
+            }
+        });
+    }
+
+    @Override
+    public void noSuchUserError(String requestedUser) {
+        Alert a = new Alert(Alert.AlertType.ERROR);
+        a.setTitle("Error");
+        a.setHeaderText("No such user: " + requestedUser);
+        a.setContentText("A client request for a certain user found no user with the specified name");
+    }
 }
