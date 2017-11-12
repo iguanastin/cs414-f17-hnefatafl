@@ -3,10 +3,7 @@ package server;
 import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
-import common.event.invite.InviteAcceptedEvent;
-import common.event.invite.InviteDeclinedEvent;
-import common.event.invite.InviteReceivedEvent;
-import common.event.invite.InviteUserEvent;
+import common.event.invite.*;
 import common.game.FinishedMatch;
 import common.game.Match;
 import common.game.MatchStatus;
@@ -378,6 +375,18 @@ public class Server extends AbstractServer {
                 handleRequestActiveInfoEvent(user);
             } else if (event instanceof RequestProfileEvent) {
                 handleRequestProfileEvent((RequestProfileEvent) event, user);
+            } else if (event instanceof AcceptInviteEvent) {
+                try {
+                    acceptInvitation(user, getUser(((AcceptInviteEvent) event).getSenderID()));
+                } catch (SQLException e) {
+                    logger.error("Error accepting invitation from user: " + ((AcceptInviteEvent) event).getSenderID(), e);
+                }
+            } else if (event instanceof DeclineInviteEvent) {
+                try {
+                    declineInvitation(getUser(((DeclineInviteEvent) event).getSenderID()), user);
+                } catch (SQLException e) {
+                    logger.error("Error declining invitation from user: " + ((DeclineInviteEvent) event).getSenderID(), e);
+                }
             }
         }
     }
@@ -408,7 +417,7 @@ public class Server extends AbstractServer {
 
     private void handleInviteUserEvent(InviteUserEvent event, User user) {
         User enemy = getUser(event.getUsername());
-        if (enemy != null) {
+        if (enemy != null && enemy != user) {
             if (getMatch(user.getId(), enemy.getId()) == null) {
                 try {
                     inviteUser(user, enemy);
@@ -601,7 +610,6 @@ public class Server extends AbstractServer {
         s.setInt(1, sender.getId());
         s.setInt(2, target.getId());
         s.executeUpdate();
-        s.close();
     }
 
     private void acceptInvitation(User sender, User target) throws SQLException {

@@ -2,8 +2,7 @@ package client;
 
 
 import common.Invitation;
-import common.event.invite.InviteDeclinedEvent;
-import common.event.invite.InviteUserEvent;
+import common.event.invite.*;
 import common.game.Match;
 import common.event.match.PlayerMoveEvent;
 import common.Profile;
@@ -45,7 +44,23 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     public void initialize() {
         MenuItem[] items = new MenuItem[2];
         items[0] = new MenuItem("Accept");
+        items[0].setOnAction(event -> {
+            try {
+                client.sendToServer(new AcceptInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
+                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
+            } catch (IOException e) {
+                logger.error("Error sending invite accept to server", e);
+            }
+        });
         items[1] = new MenuItem("Decline");
+        items[1].setOnAction(event -> {
+            try {
+                client.sendToServer(new DeclineInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
+                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
+            } catch (IOException e) {
+                logger.error("Error sending invite accept to server", e);
+            }
+        });
         inviteListContextMenu = new ContextMenu(items);
         invitesListView.setOnContextMenuRequested(event -> inviteListContextMenu.show(invitesListView, event.getScreenX(), event.getScreenY()));
 
