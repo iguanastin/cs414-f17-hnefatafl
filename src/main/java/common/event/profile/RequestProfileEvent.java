@@ -1,5 +1,7 @@
-package common;
+package common.event.profile;
 
+
+import common.Event;
 
 public class RequestProfileEvent extends Event {
 

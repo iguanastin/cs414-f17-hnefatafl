@@ -1,12 +1,14 @@
-package common;
+package common.event.invite;
+
+import common.Event;
 
 
-public class LoginFailedEvent extends Event {
+public class InviteUserEvent extends Event {
 
     private final String username;
 
 
-    public LoginFailedEvent(String username) {
+    public InviteUserEvent(String username) {
         this.username = username;
     }
 
@@ -16,7 +18,7 @@ public class LoginFailedEvent extends Event {
 
     @Override
     public String toString() {
-        return "Login request denied for user: " + getUsername();
+        return "User is inviting user: " + getUsername();
     }
 
 }

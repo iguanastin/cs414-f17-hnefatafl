@@ -1,6 +1,7 @@
-package common;
+package common.event.match;
 
 
+import common.Event;
 import common.game.Match;
 
 public class MatchStartEvent extends Event {

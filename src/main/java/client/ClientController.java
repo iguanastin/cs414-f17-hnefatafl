@@ -1,8 +1,13 @@
 package client;
 
 
-import common.*;
+import common.Invitation;
+import common.event.invite.*;
 import common.game.Match;
+import common.event.match.PlayerMoveEvent;
+import common.Profile;
+import common.event.profile.RequestActiveInfoEvent;
+import common.event.profile.RequestProfileEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -10,7 +15,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,11 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class ClientController implements MatchListener, MoveListener, ServerUtilListener {
+public class ClientController implements MatchListener, MoveListener, ServerUtilListener, InviteListener {
 
     public ListView<String> invitesListView;
     public ListView<String> gamesListView;
-    public GridPane boardGrid;
     public TextField usernameTextField;
     public TabPane tabPane;
 
@@ -35,15 +38,29 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     private final ArrayList<GameTab> gameTabs = new ArrayList<>();
 
     private final Logger logger = LoggerFactory.getLogger(ClientController.class);
-    private String host;
-    private int port;
 
 
     @FXML
     public void initialize() {
         MenuItem[] items = new MenuItem[2];
         items[0] = new MenuItem("Accept");
+        items[0].setOnAction(event -> {
+            try {
+                client.sendToServer(new AcceptInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
+                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
+            } catch (IOException e) {
+                logger.error("Error sending invite accept to server", e);
+            }
+        });
         items[1] = new MenuItem("Decline");
+        items[1].setOnAction(event -> {
+            try {
+                client.sendToServer(new DeclineInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
+                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
+            } catch (IOException e) {
+                logger.error("Error sending invite accept to server", e);
+            }
+        });
         inviteListContextMenu = new ContextMenu(items);
         invitesListView.setOnContextMenuRequested(event -> inviteListContextMenu.show(invitesListView, event.getScreenX(), event.getScreenY()));
 
@@ -54,7 +71,11 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     }
 
     public void setClient(Client client) {
-        if (this.client != null) this.client.removeMatchListener(this);
+        if (this.client != null) {
+            this.client.removeMatchListener(this);
+            this.client.removeServerUtilListener(this);
+            this.client.removeInviteListener(this);
+        }
 
         //Close all current match tabs
         ArrayList<GameTab> tabs = new ArrayList<>();
@@ -66,10 +87,11 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
         this.client = client;
         client.addMatchListener(this);
         client.addServerUtilListener(this);
+        client.addInviteListener(this);
 
         //Request current matches on new client
         try {
-            client.sendToServer(new RequestCurrentGamesEvent());
+            client.sendToServer(new RequestActiveInfoEvent());
         } catch (IOException e) {
             logger.error("Error sending current games request", e);
         }
@@ -85,7 +107,7 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
     public void inviteButtonOnAction(ActionEvent event) {
         try {
-            client.sendToServer(new InviteToMatchEvent(usernameTextField.getText()));
+            client.sendToServer(new InviteUserEvent(usernameTextField.getText()));
         } catch (IOException e) {
             logger.error("Error sending invite to user: " + usernameTextField.getText(), e);
         }
@@ -186,9 +208,34 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
     @Override
     public void noSuchUserError(String requestedUser) {
-        Alert a = new Alert(Alert.AlertType.ERROR);
-        a.setTitle("Error");
-        a.setHeaderText("No such user: " + requestedUser);
-        a.setContentText("A client request for a certain user found no user with the specified name");
+        Platform.runLater(() -> {
+            Alert a = new Alert(Alert.AlertType.ERROR);
+            a.setTitle("Error");
+            a.setHeaderText("No such user: " + requestedUser);
+            a.setContentText("A client request for a certain user found no user with the specified name");
+            a.showAndWait();
+        });
+    }
+
+    @Override
+    public void inviteReceived(Invitation invite) {
+        Platform.runLater(() -> {
+            invitesListView.getItems().add(invite.getSenderID() + "");
+        });
+    }
+
+    @Override
+    public void inviteDeclined(Invitation invite) {
+        Platform.runLater(() -> {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setTitle("Invitation declined");
+            a.setContentText("Invitation to " + invite.getTargetID() + " was declined");
+            a.showAndWait();
+        });
+    }
+
+    @Override
+    public void inviteAccepted(Invitation invite) {
+
     }
 }
