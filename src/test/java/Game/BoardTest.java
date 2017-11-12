@@ -1,5 +1,8 @@
 package Game;
 
+import common.game.Board;
+import common.game.Tile;
+import common.game.TileType;
 import org.junit.Before;
 import org.junit.Test;
 

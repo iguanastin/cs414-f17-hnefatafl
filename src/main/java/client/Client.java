@@ -12,9 +12,11 @@ public class Client extends AbstractClient {
 
     private boolean authenticated = false;
     private int userID = -1;
+    private String username = null;
 
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
+    private final ArrayList<ServerUtilListener> serverUtilListeners = new ArrayList<>();
 
 
     /**
@@ -66,6 +68,7 @@ public class Client extends AbstractClient {
         } else if (event instanceof LoginSuccessEvent) {
             LoginSuccessEvent lsEvent = (LoginSuccessEvent) event;
             userID = lsEvent.getId();
+            username = lsEvent.getUsername();
 
             //Notify login listeners
             loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
@@ -75,6 +78,10 @@ public class Client extends AbstractClient {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
         } else if (event instanceof MatchFinishEvent) {
             matchListeners.forEach(listener -> listener.matchFinished(((MatchFinishEvent) event).getMatch()));
+        } else if (event instanceof NoSuchUserEvent) {
+            serverUtilListeners.forEach(listener -> listener.noSuchUserError(((NoSuchUserEvent) event).getUsername()));
+        } else if (event instanceof SendProfileEvent) {
+            serverUtilListeners.forEach(listener -> listener.profileReceived(((SendProfileEvent) event).getProfile()));
         } else if (event instanceof PlayerMoveFailedEvent) {
             logger.error("Failed a player move");
         }
@@ -119,6 +126,10 @@ public class Client extends AbstractClient {
         return matchListeners.add(listener);
     }
 
+    public boolean addServerUtilListener(ServerUtilListener listener) {
+        return serverUtilListeners.add(listener);
+    }
+
     public boolean removeLoginListener(LoginListener listener) {
         return loginListeners.remove(listener);
     }
@@ -127,8 +138,16 @@ public class Client extends AbstractClient {
         return matchListeners.remove(listener);
     }
 
+    public boolean removeServerUtilListener(ServerUtilListener listener) {
+        return serverUtilListeners.remove(listener);
+    }
+
     public int getUserID() {
         return userID;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
 }

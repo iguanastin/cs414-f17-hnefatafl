@@ -1,6 +1,11 @@
 package client;
 
-import Game.*;
+import client.game.PieceGUI;
+import client.game.PieceTypeGUI;
+import client.game.TileGUI;
+import common.game.Match;
+import common.game.Piece;
+import common.game.Tile;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
@@ -58,7 +63,7 @@ public class GameTab extends Tab {
         return userId;
     }
 
-    public void updateMatchView() {
+    private void updateMatchView() {
         initGrid();
         Tile[][] tiles = match.getBoard().getTiles();
 

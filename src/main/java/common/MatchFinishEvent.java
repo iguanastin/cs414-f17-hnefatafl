@@ -1,7 +1,7 @@
 package common;
 
 
-import Game.Match;
+import common.game.Match;
 
 public class MatchFinishEvent extends Event {
 

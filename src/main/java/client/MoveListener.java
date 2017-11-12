@@ -1,7 +1,7 @@
 package client;
 
 
-import Game.Match;
+import common.game.Match;
 
 public interface MoveListener {
 

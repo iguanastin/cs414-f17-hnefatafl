@@ -1,10 +1,12 @@
-package Game;
+package client.game;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class PieceGUI extends StackPane {
+
+    private static final int TILE_SIZE = 75;
 
     private double mouseX, mouseY;
     private double oldX, oldY;
@@ -16,7 +18,7 @@ public class PieceGUI extends StackPane {
         this.xCoord = x_coord;
         this.yCoord = y_coord;
 
-        Circle piece = new Circle(GameGUIRunner.TILE_SIZE * 0.3);
+        Circle piece = new Circle(TILE_SIZE * 0.3);
         switch(type) {
             case ATTACKER:
                 piece.setFill(Color.BLACK);
@@ -44,8 +46,8 @@ public class PieceGUI extends StackPane {
     }
 
     public void movePiece(int x_coord, int y_coord) {
-        oldX = x_coord * GameGUIRunner.TILE_SIZE;
-        oldY = y_coord * GameGUIRunner.TILE_SIZE;
+        oldX = x_coord * TILE_SIZE;
+        oldY = y_coord * TILE_SIZE;
         relocate(oldX, oldY);
     }
 
