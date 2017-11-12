@@ -4,38 +4,56 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<TabPane fx:id="tabPane" prefHeight="638.0" prefWidth="918.0" tabClosingPolicy="UNAVAILABLE" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.ClientController">
-    <Tab text="Menu">
-        <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                <padding>
-                    <Insets bottom="5.0" left="5.0" top="5.0" />
-                </padding>
-                <HBox alignment="CENTER_LEFT" spacing="5.0">
+
+<VBox xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="client.ClientController">
+    <MenuBar>
+        <Menu mnemonicParsing="false" text="User">
+            <MenuItem onAction="#logoutMenuItemOnAction" mnemonicParsing="false" text="Logout"/>
+            <SeparatorMenuItem mnemonicParsing="false"/>
+            <MenuItem onAction="#unregisterMenuItemOnAction" mnemonicParsing="false" text="Unregister"/>
+        </Menu>
+    </MenuBar>
+    <TabPane fx:id="tabPane" prefHeight="638.0" prefWidth="918.0" tabClosingPolicy="UNAVAILABLE">
+        <Tab text="Menu">
+            <HBox prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                        <Insets bottom="5.0" left="5.0" top="5.0"/>
                     </padding>
-                    <Label minWidth="-Infinity" text="User:" />
-                    <TextField onAction="#inviteButtonOnAction" fx:id="usernameTextField" prefWidth="200.0" promptText="Username" HBox.hgrow="ALWAYS" />
-                    <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#profileButtonOnAction" text="Profile" />
-                    <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#inviteButtonOnAction" text="Invite" />
-                </HBox>
-                <Label text="Invites:" />
-                <ListView fx:id="invitesListView" VBox.vgrow="ALWAYS" />
-            </VBox>
-            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
-                <padding>
-                    <Insets bottom="5.0" right="5.0" top="5.0" />
-                </padding>
-                <Label text="Games:" />
-                <ListView fx:id="gamesListView" VBox.vgrow="ALWAYS" />
-            </VBox>
-        </HBox>
-    </Tab>
-</TabPane>
+                    <HBox alignment="CENTER_LEFT" spacing="5.0">
+                        <padding>
+                            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                        </padding>
+                        <Label minWidth="-Infinity" text="User:"/>
+                        <TextField fx:id="usernameTextField" onAction="#inviteButtonOnAction" prefWidth="200.0"
+                                   promptText="Username" HBox.hgrow="ALWAYS"/>
+                        <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#profileButtonOnAction"
+                                text="Profile"/>
+                        <Button minWidth="-Infinity" mnemonicParsing="false" onAction="#inviteButtonOnAction"
+                                text="Invite"/>
+                    </HBox>
+                    <Label text="Invites:"/>
+                    <ListView fx:id="invitesListView" VBox.vgrow="ALWAYS"/>
+                </VBox>
+                <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                    <padding>
+                        <Insets bottom="5.0" right="5.0" top="5.0"/>
+                    </padding>
+                    <Label text="Games:"/>
+                    <ListView fx:id="gamesListView" VBox.vgrow="ALWAYS"/>
+                </VBox>
+            </HBox>
+        </Tab>
+    </TabPane>
+</VBox>

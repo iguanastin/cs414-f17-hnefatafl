@@ -1,7 +1,8 @@
-package common;
+package common.event.login;
 
 
 import client.Client;
+import common.Event;
 
 public class RegisterRequestEvent extends Event {
 

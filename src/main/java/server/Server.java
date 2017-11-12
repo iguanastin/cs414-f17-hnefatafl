@@ -4,13 +4,11 @@ import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
 import common.event.invite.*;
+import common.event.login.*;
 import common.game.FinishedMatch;
 import common.game.Match;
 import common.game.MatchStatus;
 import common.*;
-import common.event.login.LoginFailedEvent;
-import common.event.login.LoginRequestEvent;
-import common.event.login.LoginSuccessEvent;
 import common.event.match.*;
 import common.event.profile.*;
 import org.mindrot.jbcrypt.BCrypt;
@@ -362,6 +360,12 @@ public class Server extends AbstractServer {
                 handleAcceptInviteEvent((AcceptInviteEvent) event, user);
             } else if (event instanceof DeclineInviteEvent) {
                 handleDeclineInviteEvent((DeclineInviteEvent) event, user);
+            } else if (event instanceof UnregisterRequestEvent) {
+                try {
+                    unregister(user);
+                } catch (IOException e) {
+                    logger.error("Error unregistering user", e);
+                }
             }
         }
     }
@@ -443,7 +447,13 @@ public class Server extends AbstractServer {
 
         for (User u : users) {
             if (u.getName().equals(loginUserName)) {
-                if (BCrypt.checkpw(loginPassword, u.getPassword())) {
+                if (u.isUnregistered()) {
+                    try {
+                        client.sendToClient(new LoginFailedEvent("This user is unregistered and cannot be used"));
+                    } catch (IOException e) {
+                        logger.error("Error sending login failed even", e);
+                    }
+                } else if (BCrypt.checkpw(loginPassword, u.getPassword())) {
                     //Password provided at login matches hashed password of user with the same name
                     user = u;
                 } else {
@@ -716,6 +726,12 @@ public class Server extends AbstractServer {
             logger.error("Error getting invitations from db", e);
             return invites;
         }
+    }
+
+    private void unregister(User user) throws IOException {
+        user.unregister();
+        commitChangedUser(user);
+        user.getClient().close();
     }
 
     /**
