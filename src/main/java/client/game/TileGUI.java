@@ -1,8 +1,6 @@
-package Game;
+package client.game;
 
 import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 
 public class TileGUI extends BorderPane {
 

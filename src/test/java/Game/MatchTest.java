@@ -2,6 +2,7 @@ package Game;
 
 import java.util.ArrayList;
 
+import common.game.*;
 import org.junit.*;
 
 import static org.junit.Assert.assertEquals;

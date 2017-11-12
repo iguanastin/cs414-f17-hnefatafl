@@ -1,7 +1,7 @@
 package client;
 
 
-import Game.Match;
+import common.game.Match;
 import common.InviteToMatchEvent;
 import common.PlayerMoveEvent;
 import common.RequestCurrentGamesEvent;
@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 
 public class ClientController implements MatchListener, MoveListener {
 
