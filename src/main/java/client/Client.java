@@ -20,6 +20,7 @@ public class  Client extends AbstractClient {
     private int userID = -1;
 
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
+    private final ArrayList<RegisterListener> registerListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
 
 
@@ -79,13 +80,13 @@ public class  Client extends AbstractClient {
             RegisterFailedEvent rfEvent = (RegisterFailedEvent) event;
 
             //Notify login listeners
-            loginListeners.forEach(listener -> listener.registerFailed(rfEvent.getEmail(), rfEvent.getUsername(), rfEvent.getError()));
+            registerListeners.forEach(listener -> listener.registerFailed(rfEvent.getEmail(), rfEvent.getUsername(), rfEvent.getError()));
         }else if (event instanceof RegisterSuccessEvent){
             RegisterSuccessEvent rsEvent = (RegisterSuccessEvent) event;
             userID = rsEvent.getId();
 
             //Notify login listeners
-            loginListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getUsername(), rsEvent.getPassword()));
+            registerListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getUsername(), rsEvent.getPassword()));
         }else if (event instanceof MatchStartEvent) {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
@@ -132,12 +133,20 @@ public class  Client extends AbstractClient {
         return loginListeners.add(listener);
     }
 
+    public boolean addRegisterListener(RegisterListener listener) {
+        return registerListeners.add(listener);
+    }
+
     public boolean addMatchListener(MatchListener listener) {
         return matchListeners.add(listener);
     }
 
     public boolean removeLoginListener(LoginListener listener) {
         return loginListeners.remove(listener);
+    }
+
+    public boolean removeRegisterListener(RegisterListener listener) {
+        return registerListeners.remove(listener);
     }
 
     public boolean removeMatchListener(MatchListener listener) {

@@ -381,19 +381,43 @@ public class Server extends AbstractServer {
             String registerUserName = ((RegisterRequestEvent) event).getUsername();
             String registerPassword = ((RegisterRequestEvent) event).getPassword();
 
-            if(users.contains(registerUserName)){
+            if(registerUserName.equals("") || registerPassword.equals("") || registerEmail.equals("")){
                 try {
-                    client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username is already taken."));
+                    client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username, Password, and email are required fields."));
                 } catch (IOException e) {
                     logger.error("Error sending register failed event", e);
                 }
             }else{
-                user = createUser(registerEmail, registerUserName, registerPassword);
-                user.setClient(client);
-                try {
-                    client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
-                } catch (IOException e) {
-                    logger.error("Error sending register success event", e);
+                boolean loginFalied = false;
+
+                for(User u : users){
+                    if(u.getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)){
+                        //Username or email is taken... Try again
+                        //TODO: break this out into 2 errors
+                        loginFalied = true;
+                        try {
+                            client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username or email is already taken."));
+                        } catch (IOException e) {
+                            logger.error("Error sending register failed event", e);
+                        }
+                    }
+                }
+                if(!loginFalied){
+                    if(!registerEmail.contains("@") || !registerEmail.contains(".")){
+                        try {
+                            client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Please enter a valid email."));
+                        } catch (IOException e) {
+                            logger.error("Error sending register failed event", e);
+                        }
+                    }else{
+                        user = createUser(registerEmail, registerUserName, registerPassword);
+                        user.setClient(client);
+                        try {
+                            client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
+                        } catch (IOException e) {
+                            logger.error("Error sending register success event", e);
+                        }
+                    }
                 }
             }
         }

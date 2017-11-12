@@ -33,7 +33,7 @@ public class RegisterSuccessEvent extends Event {
 
     @Override
     public String toString() {
-        return "Login succeeded for user: " + getId() + " - " + getUsername();
+        return "Registration succeeded for user: " + getId() + " - " + getUsername();
     }
 
 }

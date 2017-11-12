@@ -8,17 +8,29 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="188.0" prefWidth="237.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.LoginController">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="188.0" prefWidth="237.0" xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1" fx:controller="client.RegisterController">
     <center>
         <VBox alignment="CENTER" prefHeight="285.0" prefWidth="408.0" BorderPane.alignment="CENTER">
+            <HBox alignment="CENTER" layoutX="10.0" layoutY="10.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                <children>
+                    <Label text="Host:" />
+                    <TextField fx:id="hostTextField" text="localhost" />
+                </children>
+            </HBox>
+            <HBox alignment="CENTER" layoutX="10.0" layoutY="10.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
+                <children>
+                    <Label text="Port:" />
+                    <TextField fx:id="portTextField" text="54321" />
+                </children>
+            </HBox>
             <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-                <TextField fx:id="registerEmailField" onAction="#loginOnAction" promptText="Email" />
+                <TextField fx:id="registerEmailField" onAction="#registerUserAction" promptText="Email" />
             </HBox>
             <HBox alignment="CENTER" layoutX="10.0" layoutY="160.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-                <TextField fx:id="registerUsernameField" onAction="#loginOnAction" promptText="Username" />
+                <TextField fx:id="registerUsernameField" onAction="#registerUserAction" promptText="Username" />
             </HBox>
             <HBox alignment="CENTER" layoutX="10.0" layoutY="160.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
-                <PasswordField fx:id="registerPasswordField" onAction="#loginOnAction" promptText="Password" />
+                <PasswordField fx:id="registerPasswordField" onAction="#registerUserAction" promptText="Password" />
             </HBox>
             <HBox alignment="CENTER" layoutX="10.0" layoutY="210.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
                 <Button mnemonicParsing="false" onAction="#registerUserAction" text="Register" />
