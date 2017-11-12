@@ -6,9 +6,6 @@ import common.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -24,11 +21,11 @@ public class Server extends AbstractServer {
     /**
      * SQL Statement to create the games table
      */
-    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1 FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2 FOREIGN KEY (p2_id) REFERENCES users(id));";
+    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1g FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2g FOREIGN KEY (p2_id) REFERENCES users(id));";
     /**
-     * SQL Statement to create the boards table
+     * SQL Statement to create game history table
      */
-    private static final String CREATE_BOARDS_TABLE = "CREATE TABLE boards(id INT PRIMARY KEY AUTO_INCREMENT);";
+    private static final String CREATE_HISTORY_TABLE = "CREATE TABLE played(id INT AUTO_INCREMENT PRIMARY KEY, p1_id INT, p2_id INT, end_result INT, winner_id INT, CONSTRAINT fk_p1p FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2p FOREIGN KEY (p2_id) REFERENCES users(id));";
 
     /**
      * SQL Statement to drop the users table
@@ -39,13 +36,9 @@ public class Server extends AbstractServer {
      */
     private static final String DROP_GAMES_TABLE = "DROP TABLE IF EXISTS games;";
     /**
-     * SQL Statement to drop the boards table
+     * SQL Statement to drop the game history table
      */
-    private static final String DROP_BOARDS_TABLE = "DROP TABLE IF EXISTS boards;";
-
-    private static final String KNOWN_USERS = "server/knownUsers.txt";
-    private final String KEY = "thwcnmudgkvelbzfjxsoyrapiq";
-    private final String ALPHA = "abcdefghijklmnopqrstuvwxyz";
+    private static final String DROP_HISTORY_TABLE = "DROP TABLE IF EXISTS played;";
 
     /**
      * SQL Database connection to the database
@@ -212,7 +205,7 @@ public class Server extends AbstractServer {
      * @return A user created with the information provided. Null if there was an error creating the user in the database
      */
     private User createUser(String email, String name, String password) {
-        if (getUserForName(name) != null) return null;
+        if (getUser(name) != null) return null;
         logger.info("Creating new User: " + name);
         try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
             s.setNString(1, name);
@@ -276,7 +269,7 @@ public class Server extends AbstractServer {
         try (Statement s = dbConnection.createStatement()) {
             s.executeQuery("SELECT * FROM users;");
             s.executeQuery("SELECT * FROM games;");
-            s.executeQuery("SELECT * FROM boards;");
+            s.executeQuery("SELECT * FROM played;");
             return true;
         } catch (Exception e) {
             return false;
@@ -297,8 +290,8 @@ public class Server extends AbstractServer {
         s.executeUpdate(DROP_GAMES_TABLE);
         s.executeUpdate(CREATE_GAMES_TABLE);
 
-        s.executeUpdate(DROP_BOARDS_TABLE);
-        s.executeUpdate(CREATE_BOARDS_TABLE);
+        s.executeUpdate(DROP_HISTORY_TABLE);
+        s.executeUpdate(CREATE_HISTORY_TABLE);
 
         s.close();
     }
@@ -324,14 +317,13 @@ public class Server extends AbstractServer {
      * @param client Client from which the event originated.
      */
     private void handleEventFromClient(Event event, ConnectionToClient client) {
-        User user = getUserForConnection(client);
+        User user = getUser(client);
 
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
         } else if (event instanceof LoginRequestEvent) {
-            ///authenticate((LoginRequestEvent) event, client);
-            //Auth not working yet, just let them in.
             for (User u : users) {
+                //TODO: Compare password as well
                 if (u.getName().equals(((LoginRequestEvent) event).getUsername())) {
                     user = u;
                     break;
@@ -346,11 +338,7 @@ public class Server extends AbstractServer {
                 }
             } else {
                 user.setClient(client);
-                try {
-                    client.sendToClient(new LoginSuccessEvent(user.getName(), user.getId()));
-                } catch (IOException e) {
-                    logger.error("Error sending login success event", e);
-                }
+                user.send(new LoginSuccessEvent(user.getName(), user.getId()));
             }
         }
 
@@ -360,7 +348,7 @@ public class Server extends AbstractServer {
             if (event instanceof PlayerMoveEvent) {
                 handlePlayerMoveEvent((PlayerMoveEvent) event, user);
             } else if (event instanceof InviteToMatchEvent) {
-                User enemy = getUserForName(((InviteToMatchEvent) event).getName());
+                User enemy = getUser(((InviteToMatchEvent) event).getName());
                 if (enemy != null && getMatch(user.getId(), enemy.getId()) == null) {
                     startMatch(user, enemy);
                 }
@@ -369,11 +357,7 @@ public class Server extends AbstractServer {
             } else if (event instanceof RequestCurrentGamesEvent) {
                 for (Match match : matches) {
                     if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
-                        try {
-                            client.sendToClient(new MatchStartEvent(match));
-                        } catch (IOException e) {
-                            logger.error("Error sending in-progress match to user: " + user.getName(), e);
-                        }
+                        user.send(new MatchStartEvent(match));
                     }
                 }
             }
@@ -388,85 +372,92 @@ public class Server extends AbstractServer {
      */
     private void handlePlayerMoveEvent(PlayerMoveEvent event, User user) {
         Match match = getMatch(user.getId(), event.getEnemyId());
-        User enemy = getUserForID(event.getEnemyId());
 
         if (match != null) {
             if (match.getCurrentPlayer() == user.getId()) {
-                if (!match.isValidMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()])) {
-                    try {
-                        user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
-                    } catch (IOException e) {
-                        logger.error("Error sending INVALID_MOVE failure to client: " + user.getClient(), e);
-                    }
+                if (!match.isValidMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol())) {
+                    user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
                     return;
                 }
 
-                match.makeMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()]);
+                match.makeMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol());
                 final boolean end = match.isOver();
                 if (!end) match.swapTurn();
 
-                notifyMatchUpdate(user, match, enemy);
+                notifyMatchUpdate(match);
                 if (end) {
-                    endMatch(user, match, enemy);
+                    endMatch(match);
                 }
             } else {
-                try {
-                    user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
-                } catch (IOException e) {
-                    logger.error("Error sending NOT_YOUR_TURN fail event to client: " + user.getClient(), e);
-                }
+                user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
             }
         } else {
-            try {
-                user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
-            } catch (IOException e) {
-                logger.error("Error sending NO_MATCH fail event to client: " + user.getClient(), e);
-            }
+            user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
         }
     }
 
-    private User notifyMatchUpdate(User user, Match match, User enemy) {
-        //Notify player of match change
-        try {
-            user.getClient().forceResetAfterSend();
-            user.getClient().sendToClient(new MatchUpdateEvent(match));
-        } catch (IOException e) {
-            logger.error("Error sending updated match to player client: " + user.getClient(), e);
+    /**
+     * Notifies users in the match of an update to the match state
+     *
+     * @param match Match to notify users in
+     */
+    private void notifyMatchUpdate(Match match) {
+        User user = getUser(match.getAttacker());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchUpdateEvent(match));
         }
-
-        //Notify enemy of match change
-        if (enemy != null && enemy.isLoggedIn()) {
-            try {
-                enemy.getClient().forceResetAfterSend();
-                enemy.getClient().sendToClient(new MatchUpdateEvent(match));
-            } catch (IOException e) {
-                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
-            }
+        user = getUser(match.getDefender());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchUpdateEvent(match));
         }
-        return enemy;
     }
 
-    private void endMatch(User user, Match match, User enemy) {
+    /**
+     * Ends a match and notifies users
+     *
+     * @param match Match to end
+     */
+    private void endMatch(Match match) {
         logger.info("Match finished " + match.getAttacker() + "v" + match.getDefender());
 
         synchronized (matches) {
             matches.remove(match);
         }
 
-        //Notify player of match finish
-        try {
-            user.getClient().sendToClient(new MatchFinishEvent(match));
-        } catch (IOException e) {
-            logger.error("Error sending updated match to player client: " + user.getClient(), e);
-        }
+        int matchResult = 0; //TODO Set up actual match end enums
+        int matchWinner = match.getAttacker();
+        if (match.getStatus().equals(MatchStatus.DEFENDER_WIN)) matchWinner = match.getDefender();
 
-        //Notify enemy of match finish
-        if (enemy != null && enemy.isLoggedIn()) {
-            try {
-                enemy.getClient().sendToClient(new MatchFinishEvent(match));
-            } catch (IOException e) {
-                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
-            }
+        createMatchHistory(match, matchResult, matchWinner);
+
+        User user = getUser(match.getAttacker());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchFinishEvent(match));
+        }
+        user = getUser(match.getDefender());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchFinishEvent(match));
+        }
+    }
+
+    private void createMatchHistory(Match match, int matchResult, int matchWinner) {
+        try {
+            PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?);");
+
+            s.setInt(1, match.getAttacker());
+            s.setInt(2, match.getDefender());
+            s.setInt(3, matchResult);
+            s.setInt(4, matchWinner);
+
+            s.executeUpdate();
+
+            s.close();
+        } catch (SQLException e) {
+            logger.error("Error committing game history to db", e);
         }
     }
 
@@ -498,7 +489,7 @@ public class Server extends AbstractServer {
      */
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
-        User user = getUserForConnection(client);
+        User user = getUser(client);
         if (user != null) user.setClient(null);
 
         logClient(client, "Disconnected");
@@ -537,7 +528,7 @@ public class Server extends AbstractServer {
      * @param client Client to match user with.
      * @return The user object that represents the client. Null if the client has not logged in yet.
      */
-    private User getUserForConnection(ConnectionToClient client) {
+    private User getUser(ConnectionToClient client) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getClient() == client) return user;
@@ -553,7 +544,7 @@ public class Server extends AbstractServer {
      * @param id ID of user to find
      * @return User with the given ID, null if no such user exists
      */
-    private User getUserForID(int id) {
+    private User getUser(int id) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getId() == id) return user;
@@ -563,7 +554,13 @@ public class Server extends AbstractServer {
         return null;
     }
 
-    private User getUserForName(String name) {
+    /**
+     * Attempts to find a known user with a given name
+     *
+     * @param name Name to search for
+     * @return User with given name, null if no such user exists
+     */
+    private User getUser(String name) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getName().equalsIgnoreCase(name)) return user;
@@ -571,61 +568,6 @@ public class Server extends AbstractServer {
         }
 
         return null;
-    }
-
-
-    public synchronized boolean authenticate(LoginRequestEvent loginInfo, ConnectionToClient client){
-        String line;
-        boolean userExists = false;
-        //TODO: Get user from instance variable 'users' instead of text file
-
-        try {
-            FileReader fileReader = new FileReader(KNOWN_USERS);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-            while((line = bufferedReader.readLine()) != null) {
-                String[] userPass = line.split("<===>");
-
-                if(userPass[0].equals(loginInfo.getUsername())){
-                    userExists = true;
-                    String encryptedPassword = encrypt(loginInfo.getPassword());
-                    int user_id = 0; //TODO: GET ACTUAL USER ID
-
-                    //Check the sncrytion mathces in both direction
-                    if(userPass[1].equals(encryptedPassword) && decrypt(userPass[1]).equals(loginInfo.getPassword())){
-                        client.sendToClient(new LoginSuccessEvent(userPass[0], user_id));
-                    }
-                    else{
-                        client.sendToClient(new LoginFailedEvent(userPass[0]));
-                    }
-                }
-            }
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
-
-    public String encrypt(String plainText){
-        String encrypt = "";
-        for(char s: plainText.toCharArray()){
-            encrypt += KEY.charAt(ALPHA.indexOf(s));
-        }
-        return encrypt;
-    }
-
-    public String decrypt(String cipherText){
-        String decrypt = "";
-        for(char s: cipherText.toCharArray()){
-            decrypt += ALPHA.charAt(KEY.indexOf(s));
-        }
-        return decrypt;
     }
 
     /**

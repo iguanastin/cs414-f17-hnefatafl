@@ -40,22 +40,24 @@ public class LoginController implements LoginListener {
                     }
                 }
             });
+
+            usernameTextField.requestFocus();
         });
     }
 
     public void loginOnAction(ActionEvent event) {
         try {
             client = new Client(hostTextField.getText(), Integer.parseInt(portTextField.getText()));
+            client.addLoginListener(this);
+
+            try {
+                client.sendToServer(new LoginRequestEvent(usernameTextField.getText(), passwordTextField.getText()));
+            } catch (IOException e) {
+                logger.error("Error sending login request to server", e);
+            }
         } catch (IOException e) {
             logger.error("Error connecting to server " + hostTextField.getText() + ":" + portTextField.getText(), e);
             loginFailed(usernameTextField.getText());
-        }
-        client.addLoginListener(this);
-
-        try {
-            client.sendToServer(new LoginRequestEvent(usernameTextField.getText(), passwordTextField.getText()));
-        } catch (IOException e) {
-            logger.error("Error sending login request to server", e);
         }
     }
 
