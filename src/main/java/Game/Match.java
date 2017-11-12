@@ -125,6 +125,10 @@ public class Match implements Serializable {
         return true;
     }
 
+    public boolean isValidMove(int x1, int y1, int x2, int y2) {
+        return isValidMove(getBoard().getTiles()[x1][y1], getBoard().getTiles()[x2][y2]);
+    }
+
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
     public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
         HashSet<Tile> capturedTiles = new HashSet<Tile>();
@@ -141,6 +145,10 @@ public class Match implements Serializable {
             capturedTiles = capture(toTile);
         }
         return capturedTiles;
+    }
+
+    public HashSet<Tile> makeMove(int x1, int y1, int x2, int y2) {
+        return makeMove(getBoard().getTiles()[x1][y1], getBoard().getTiles()[x2][y2]);
     }
 
     //Processes capturing performed by a piece, called by makeMove

@@ -103,7 +103,7 @@ public class Client extends AbstractClient {
      * @throws IOException If the server is already disconnected.
      */
     public synchronized void disconnect() throws IOException {
-        sendToServer(new ClientDisconnectEvent());
+        if (isConnected()) sendToServer(new ClientDisconnectEvent());
         closeConnection();
     }
 
@@ -129,14 +129,6 @@ public class Client extends AbstractClient {
 
     public int getUserID() {
         return userID;
-    }
-
-    public static void main(String[] args) {
-//        try {
-//            ///new Client("localhost", 54321);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
 }

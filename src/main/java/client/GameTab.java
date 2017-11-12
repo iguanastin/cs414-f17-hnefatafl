@@ -64,65 +64,74 @@ public class GameTab extends Tab {
 
         for (int row = 0; row < tiles.length; row++) {
             for (int col = 0; col < tiles[0].length; col++) {
-                TileGUI tileGUI = new TileGUI(row, col);
-                tileGUI.setOnDragOver(event -> {
-                    if (event.getGestureSource() instanceof PieceGUI && !event.getGestureSource().equals(tileGUI.getPiece())) {
-                        event.acceptTransferModes(TransferMode.ANY);
-                    }
-                    event.consume();
-                });
-                tileGUI.setOnDragDropped(event -> {
-                    PieceGUI piece = (PieceGUI) event.getGestureSource();
-
-                    moveListeners.forEach(listener -> listener.playerRequestedMove(match, piece.getyCoord(), piece.getxCoord(), tileGUI.getyCoord(), tileGUI.getxCoord()));
-                });
-                grid.add(tileGUI, col, row);
+                TileGUI tileGUI = initTileGUI(row, col);
 
                 Piece piece = tiles[col][row].getPiece();
                 if (piece != null) {
-                    PieceTypeGUI type = PieceTypeGUI.ATTACKER;
-                    if (piece.isKing()) {
-                        type = PieceTypeGUI.KING;
-                    } else if (piece.getUser() == match.getDefender()) {
-                        type = PieceTypeGUI.DEFENDER;
-                    }
                     if (match.getCurrentPlayer() == getUserId() && piece.getUser() == getUserId()) {
                         tileGUI.setBackgroundColor("yellow");
                     }
 
-                    PieceGUI pieceGUI = new PieceGUI(row, col, type);
-                    pieceGUI.setOnDragDetected(event -> {
-                        if (match.getCurrentPlayer() == getUserId()) {
-                            //Start drag
-                            Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
-                            ClipboardContent cc = new ClipboardContent();
-                            cc.putString(pieceGUI.toString());
-                            db.setContent(cc);
-
-                            final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
-                            for (Node node : grid.getChildren()) {
-                                if (node instanceof TileGUI) {
-                                    if (moves.contains(match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()])) {
-                                        ((TileGUI) node).setBackgroundColor("green");
-                                    }
-                                }
-                            }
-                        }
-
-                        event.consume();
-                    });
-                    pieceGUI.setOnDragDone(event -> {
-                        for (Node node : grid.getChildren()) {
-                            if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
-                                ((TileGUI) node).setBackgroundColor("transparent");
-                            }
-                        }
-                    });
-
+                    PieceGUI pieceGUI = initPieceGUI(row, col, piece);
                     tileGUI.setPiece(pieceGUI);
                 }
             }
         }
+    }
+
+    private PieceGUI initPieceGUI(int row, int col, Piece piece) {
+        PieceTypeGUI type = PieceTypeGUI.ATTACKER;
+        if (piece.isKing()) {
+            type = PieceTypeGUI.KING;
+        } else if (piece.getUser() == match.getDefender()) {
+            type = PieceTypeGUI.DEFENDER;
+        }
+        PieceGUI pieceGUI = new PieceGUI(row, col, type);
+        pieceGUI.setOnDragDetected(event -> {
+            if (match.getCurrentPlayer() == getUserId()) {
+                //Start drag
+                Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
+                ClipboardContent cc = new ClipboardContent();
+                cc.putString(pieceGUI.toString());
+                db.setContent(cc);
+
+                final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
+                for (Node node : grid.getChildren()) {
+                    if (node instanceof TileGUI) {
+                        if (moves.contains(match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()])) {
+                            ((TileGUI) node).setBackgroundColor("green");
+                        }
+                    }
+                }
+            }
+
+            event.consume();
+        });
+        pieceGUI.setOnDragDone(event -> {
+            for (Node node : grid.getChildren()) {
+                if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
+                    ((TileGUI) node).setBackgroundColor("transparent");
+                }
+            }
+        });
+        return pieceGUI;
+    }
+
+    private TileGUI initTileGUI(int row, int col) {
+        TileGUI tileGUI = new TileGUI(row, col);
+        tileGUI.setOnDragOver(event -> {
+            if (event.getGestureSource() instanceof PieceGUI && !event.getGestureSource().equals(tileGUI.getPiece())) {
+                event.acceptTransferModes(TransferMode.ANY);
+            }
+            event.consume();
+        });
+        tileGUI.setOnDragDropped(event -> {
+            PieceGUI piece = (PieceGUI) event.getGestureSource();
+
+            moveListeners.forEach(listener -> listener.playerRequestedMove(match, piece.getyCoord(), piece.getxCoord(), tileGUI.getyCoord(), tileGUI.getxCoord()));
+        });
+        grid.add(tileGUI, col, row);
+        return tileGUI;
     }
 
     public boolean addMoveListener(MoveListener listener) {

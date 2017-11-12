@@ -1,6 +1,8 @@
 package server;
 
 
+import java.io.IOException;
+
 public class User {
 
     /**
@@ -96,6 +98,31 @@ public class User {
      */
     public void setClient(ConnectionToClient client) {
         this.client = client;
+    }
+
+    public boolean send(Object o) {
+        if (isLoggedIn()) {
+            try {
+                getClient().sendToClient(o);
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean resetOutputStream() {
+        if (isLoggedIn()) {
+            try {
+                getClient().forceResetAfterSend();
+                return true;
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     /**
