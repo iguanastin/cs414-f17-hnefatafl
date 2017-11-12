@@ -1,4 +1,4 @@
-package common.profile;
+package common;
 
 import common.game.FinishedMatch;
 

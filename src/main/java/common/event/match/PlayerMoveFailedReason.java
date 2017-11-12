@@ -1,4 +1,4 @@
-package common.match;
+package common.event.match;
 
 
 public enum PlayerMoveFailedReason {

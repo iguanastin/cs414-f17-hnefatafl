@@ -1,4 +1,4 @@
-package common.profile;
+package common.event.profile;
 
 
 import common.Event;

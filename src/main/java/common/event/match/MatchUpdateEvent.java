@@ -1,4 +1,4 @@
-package common.match;
+package common.event.match;
 
 
 import common.Event;

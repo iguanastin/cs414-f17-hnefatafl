@@ -1,4 +1,4 @@
-package common.login;
+package common.event.login;
 
 
 import common.Event;

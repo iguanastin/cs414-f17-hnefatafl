@@ -1,4 +1,4 @@
-package common.invite;
+package common.event.invite;
 
 import common.Event;
 

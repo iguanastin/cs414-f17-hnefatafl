@@ -1,4 +1,4 @@
-package common.connection;
+package common.event.connection;
 
 
 import common.Event;

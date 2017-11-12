@@ -2,17 +2,20 @@ package client;
 
 
 import common.*;
-import common.connection.ClientDisconnectEvent;
-import common.connection.ConnectAcceptedEvent;
-import common.connection.HeartbeatEvent;
-import common.login.LoginFailedEvent;
-import common.login.LoginSuccessEvent;
-import common.match.MatchFinishEvent;
-import common.match.MatchStartEvent;
-import common.match.MatchUpdateEvent;
-import common.match.PlayerMoveFailedEvent;
-import common.profile.NoSuchUserEvent;
-import common.profile.SendProfileEvent;
+import common.event.connection.ClientDisconnectEvent;
+import common.event.connection.ConnectAcceptedEvent;
+import common.event.connection.HeartbeatEvent;
+import common.event.invite.InviteAcceptedEvent;
+import common.event.invite.InviteDeclinedEvent;
+import common.event.invite.InviteReceivedEvent;
+import common.event.login.LoginFailedEvent;
+import common.event.login.LoginSuccessEvent;
+import common.event.match.MatchFinishEvent;
+import common.event.match.MatchStartEvent;
+import common.event.match.MatchUpdateEvent;
+import common.event.match.PlayerMoveFailedEvent;
+import common.event.profile.NoSuchUserEvent;
+import common.event.profile.SendProfileEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +31,7 @@ public class Client extends AbstractClient {
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
     private final ArrayList<ServerUtilListener> serverUtilListeners = new ArrayList<>();
+    private final ArrayList<InviteListener> inviteListeners = new ArrayList<>();
 
 
     /**
@@ -95,6 +99,12 @@ public class Client extends AbstractClient {
             serverUtilListeners.forEach(listener -> listener.profileReceived(((SendProfileEvent) event).getProfile()));
         } else if (event instanceof PlayerMoveFailedEvent) {
             logger.error("Failed a player move");
+        } else if (event instanceof InviteReceivedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteReceived(((InviteReceivedEvent) event).getInvite()));
+        } else if (event instanceof InviteAcceptedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteAccepted(((InviteAcceptedEvent) event).getInvite()));
+        } else if (event instanceof InviteDeclinedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteDeclined(((InviteDeclinedEvent) event).getInvite()));
         }
     }
 
@@ -141,6 +151,10 @@ public class Client extends AbstractClient {
         return serverUtilListeners.add(listener);
     }
 
+    public boolean addInviteListener(InviteListener listener) {
+        return inviteListeners.add(listener);
+    }
+
     public boolean removeLoginListener(LoginListener listener) {
         return loginListeners.remove(listener);
     }
@@ -153,6 +167,10 @@ public class Client extends AbstractClient {
         return serverUtilListeners.remove(listener);
     }
 
+    public boolean removeInviteListener(InviteListener listener) {
+        return inviteListeners.remove(listener);
+    }
+
     public int getUserID() {
         return userID;
     }
@@ -160,5 +178,4 @@ public class Client extends AbstractClient {
     public String getUsername() {
         return username;
     }
-
 }

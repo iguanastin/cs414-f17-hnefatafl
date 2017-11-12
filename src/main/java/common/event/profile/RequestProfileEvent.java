@@ -1,14 +1,14 @@
-package common.login;
+package common.event.profile;
 
 
 import common.Event;
 
-public class LoginFailedEvent extends Event {
+public class RequestProfileEvent extends Event {
 
     private final String username;
 
 
-    public LoginFailedEvent(String username) {
+    public RequestProfileEvent(String username) {
         this.username = username;
     }
 
@@ -18,7 +18,7 @@ public class LoginFailedEvent extends Event {
 
     @Override
     public String toString() {
-        return "Login request denied for user: " + getUsername();
+        return "Requesting game history of user: " + getUsername();
     }
 
 }

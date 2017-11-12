@@ -1,15 +1,15 @@
-package common.match;
+package common.event.match;
 
 
 import common.Event;
 import common.game.Match;
 
-public class MatchFinishEvent extends Event {
+public class MatchStartEvent extends Event {
 
     private final Match match;
 
 
-    public MatchFinishEvent(Match match) {
+    public MatchStartEvent(Match match) {
         this.match = match;
     }
 
@@ -19,7 +19,7 @@ public class MatchFinishEvent extends Event {
 
     @Override
     public String toString() {
-        return "Match finished between " + match.getAttacker() + " and " + match.getDefender();
+        return "Match started between " + match.getAttacker() + " and " + match.getDefender();
     }
 
 }
