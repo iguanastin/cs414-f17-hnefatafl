@@ -110,11 +110,6 @@ public class Server extends AbstractServer {
         connectToDB();
 
         initHeartbeatThread();
-
-        //TODO: Remove this, testing purposes
-        createUser("test@test.test", "user1", "1234");
-        createUser("test2@test.test", "user2", "1234");
-        createUser("test3@test.test", "user3", "1234");
     }
 
     /**
