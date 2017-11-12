@@ -340,97 +340,16 @@ public class Server extends AbstractServer {
 
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
-        }
-        else if (event instanceof LoginRequestEvent) {
-            ///authenticate((LoginRequestEvent) event, client);
-            //Auth not working yet, just let them in.
-            String loginUserName = ((LoginRequestEvent) event).getUsername();
-            String loginPassword = ((LoginRequestEvent) event).getPassword();
-
-            for (User u : users) {
-                if (u.getName().equals(loginUserName)){
-                    if(BCrypt.checkpw(loginPassword, u.getPassword())){
-                        //Password provided at login matches hashed password of user with the same name
-                        try {
-                            user = u;
-                            client.sendToClient(new LoginSuccessEvent(loginUserName, u.getId()));
-                        }
-                        catch (IOException e){
-                            logger.error("Error sending login success event", e);
-                        }
-                    }
-                    else{
-                        //Password does not match. Tell the user
-                        try {
-                            client.sendToClient(new LoginFailedEvent("Password Provided for this Username was incorrect."));
-                        } catch (IOException e) {
-                            logger.error("Error sending login failed event", e);
-                        }
-                    }
-
-                    break;
-                }
-            }
-
-            if (user == null) {
-                try {
-                    client.sendToClient(new LoginFailedEvent(loginUserName));
-                } catch (IOException e) {
-                    logger.error("Error sending login failed event", e);
-                }
-            } else {
-                user.setClient(client);
-                user.send(new LoginSuccessEvent(user.getName(), user.getId()));
-            }
-        }else if(event instanceof RegisterRequestEvent){
-            String registerEmail = ((RegisterRequestEvent) event).getEmail();
-            String registerUserName = ((RegisterRequestEvent) event).getUsername();
-            String registerPassword = ((RegisterRequestEvent) event).getPassword();
-
-            if(registerUserName.equals("") || registerPassword.equals("") || registerEmail.equals("")){
-                try {
-                    client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username, Password, and email are required fields."));
-                } catch (IOException e) {
-                    logger.error("Error sending register failed event", e);
-                }
-            }else{
-                boolean loginFalied = false;
-
-                for(User u : users){
-                    if(u.getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)){
-                        //Username or email is taken... Try again
-                        //TODO: break this out into 2 errors
-                        loginFalied = true;
-                        try {
-                            client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username or email is already taken."));
-                        } catch (IOException e) {
-                            logger.error("Error sending register failed event", e);
-                        }
-                    }
-                }
-                if(!loginFalied){
-                    if(!registerEmail.contains("@") || !registerEmail.contains(".")){
-                        try {
-                            client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Please enter a valid email."));
-                        } catch (IOException e) {
-                            logger.error("Error sending register failed event", e);
-                        }
-                    }else{
-                        user = createUser(registerEmail, registerUserName, registerPassword);
-                        user.setClient(client);
-                        try {
-                            client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
-                        } catch (IOException e) {
-                            logger.error("Error sending register success event", e);
-                        }
-                    }
-                }
-            }
+        } else if (event instanceof LoginRequestEvent) {
+            handleLoginRequestEvent((LoginRequestEvent) event, client);
+        } else if (event instanceof RegisterRequestEvent) {
+            handleRegisterRequestEvent((RegisterRequestEvent) event, client);
         }
 
-        //Event handling for logged in clients
         //--------------------------------------------------------------------------------------------------------------
         if (user != null) {
+            //This client is logged in as user
+
             if (event instanceof PlayerMoveEvent) {
                 handlePlayerMoveEvent((PlayerMoveEvent) event, user);
             } else if (event instanceof InviteUserEvent) {
@@ -440,18 +359,115 @@ public class Server extends AbstractServer {
             } else if (event instanceof RequestProfileEvent) {
                 handleRequestProfileEvent((RequestProfileEvent) event, user);
             } else if (event instanceof AcceptInviteEvent) {
-                try {
-                    acceptInvitation(user, getUser(((AcceptInviteEvent) event).getSenderID()));
-                } catch (SQLException e) {
-                    logger.error("Error accepting invitation from user: " + ((AcceptInviteEvent) event).getSenderID(), e);
-                }
+                handleAcceptInviteEvent((AcceptInviteEvent) event, user);
             } else if (event instanceof DeclineInviteEvent) {
-                try {
-                    declineInvitation(getUser(((DeclineInviteEvent) event).getSenderID()), user);
-                } catch (SQLException e) {
-                    logger.error("Error declining invitation from user: " + ((DeclineInviteEvent) event).getSenderID(), e);
+                handleDeclineInviteEvent((DeclineInviteEvent) event, user);
+            }
+        }
+    }
+
+    private void handleDeclineInviteEvent(DeclineInviteEvent event, User user) {
+        try {
+            declineInvitation(getUser(event.getSenderID()), user);
+        } catch (SQLException e) {
+            logger.error("Error declining invitation from user: " + event.getSenderID(), e);
+        }
+    }
+
+    private void handleAcceptInviteEvent(AcceptInviteEvent event, User user) {
+        try {
+            acceptInvitation(getUser(event.getSenderID()), user);
+        } catch (SQLException e) {
+            logger.error("Error accepting invitation from user: " + event.getSenderID(), e);
+        }
+    }
+
+    private void handleRegisterRequestEvent(RegisterRequestEvent event, ConnectionToClient client) {
+        String registerEmail = event.getEmail();
+        String registerUserName = event.getUsername();
+        String registerPassword = event.getPassword();
+        User user = null;
+
+        if (registerUserName.equals("") || registerPassword.equals("") || registerEmail.equals("")) {
+            try {
+                client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username, Password, and email are required fields."));
+            } catch (IOException e) {
+                logger.error("Error sending register failed event", e);
+            }
+        } else {
+            boolean loginFalied = false;
+
+            for (User u : users) {
+                if (u.getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)) {
+                    //Username or email is taken... Try again
+                    //TODO: break this out into 2 errors
+                    loginFalied = true;
+                    try {
+                        client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username or email is already taken."));
+                    } catch (IOException e) {
+                        logger.error("Error sending register failed event", e);
+                    }
                 }
             }
+            if (!loginFalied) {
+                //Compare to standard email regex RFC 5322
+                if (!registerEmail.matches("(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])")) {
+                    try {
+                        client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Please enter a valid email."));
+                    } catch (IOException e) {
+                        logger.error("Error sending register failed event", e);
+                    }
+                } else {
+                    user = createUser(registerEmail, registerUserName, registerPassword);
+                    if (user != null) {
+                        user.setClient(client);
+                        try {
+                            client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
+                        } catch (IOException e) {
+                            logger.error("Error sending register success event", e);
+                        }
+                    } else {
+                        //TODO: Send error creating user
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleLoginRequestEvent(LoginRequestEvent event, ConnectionToClient client) {
+        ///authenticate((LoginRequestEvent) event, client);
+        //Auth not working yet, just let them in.
+        String loginUserName = event.getUsername();
+        String loginPassword = event.getPassword();
+        User user = null;
+
+        for (User u : users) {
+            if (u.getName().equals(loginUserName)) {
+                if (BCrypt.checkpw(loginPassword, u.getPassword())) {
+                    //Password provided at login matches hashed password of user with the same name
+                    user = u;
+                } else {
+                    //Password does not match. Tell the user
+                    try {
+                        client.sendToClient(new LoginFailedEvent("Password Provided for this Username was incorrect."));
+                    } catch (IOException e) {
+                        logger.error("Error sending login failed event", e);
+                    }
+                }
+
+                break;
+            }
+        }
+
+        if (user == null) {
+            try {
+                client.sendToClient(new LoginFailedEvent(loginUserName));
+            } catch (IOException e) {
+                logger.error("Error sending login failed event", e);
+            }
+        } else {
+            user.setClient(client);
+            user.send(new LoginSuccessEvent(user.getName(), user.getId()));
         }
     }
 
