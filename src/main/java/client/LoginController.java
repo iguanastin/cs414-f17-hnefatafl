@@ -1,8 +1,7 @@
 package client;
 
-
-import common.LoginRequestEvent;
 import common.RegisterRequestEvent;
+import common.event.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,30 +30,34 @@ public class LoginController implements LoginListener {
 
     @FXML
     public void initialize() {
-        Platform.runLater(() -> usernameTextField.getScene().getWindow().setOnCloseRequest(event -> {
-            if (client != null) {
-                try {
-                    client.disconnect();
-                } catch (IOException e) {
-                    logger.error("Error closing client connection", e);
+        Platform.runLater(() -> {
+            usernameTextField.getScene().getWindow().setOnCloseRequest(event -> {
+                if (client != null) {
+                    try {
+                        client.disconnect();
+                    } catch (IOException e) {
+                        logger.error("Error closing client connection", e);
+                    }
                 }
-            }
-        }));
+            });
+
+            usernameTextField.requestFocus();
+        });
     }
 
     public void loginOnAction(ActionEvent event) {
         try {
             client = new Client(hostTextField.getText(), Integer.parseInt(portTextField.getText()));
+            client.addLoginListener(this);
+
+            try {
+                client.sendToServer(new LoginRequestEvent(usernameTextField.getText(), passwordTextField.getText()));
+            } catch (IOException e) {
+                logger.error("Error sending login request to server", e);
+            }
         } catch (IOException e) {
             logger.error("Error connecting to server " + hostTextField.getText() + ":" + portTextField.getText(), e);
             loginFailed(usernameTextField.getText());
-        }
-        client.addLoginListener(this);
-
-        try {
-            client.sendToServer(new LoginRequestEvent(usernameTextField.getText(), passwordTextField.getText()));
-        } catch (IOException e) {
-            logger.error("Error sending login request to server", e);
         }
     }
 
@@ -136,5 +139,4 @@ public class LoginController implements LoginListener {
             }
         }
     }
-
 }

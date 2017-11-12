@@ -2,12 +2,20 @@ package client;
 
 
 import common.*;
-import javafx.application.Application;
-import javafx.application.Platform;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import common.event.connection.ClientDisconnectEvent;
+import common.event.connection.ConnectAcceptedEvent;
+import common.event.connection.HeartbeatEvent;
+import common.event.invite.InviteAcceptedEvent;
+import common.event.invite.InviteDeclinedEvent;
+import common.event.invite.InviteReceivedEvent;
+import common.event.login.LoginFailedEvent;
+import common.event.login.LoginSuccessEvent;
+import common.event.match.MatchFinishEvent;
+import common.event.match.MatchStartEvent;
+import common.event.match.MatchUpdateEvent;
+import common.event.match.PlayerMoveFailedEvent;
+import common.event.profile.NoSuchUserEvent;
+import common.event.profile.SendProfileEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,10 +26,13 @@ public class  Client extends AbstractClient {
 
     private boolean authenticated = false;
     private int userID = -1;
+    private String username = null;
 
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
     private final ArrayList<RegisterListener> registerListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
+    private final ArrayList<ServerUtilListener> serverUtilListeners = new ArrayList<>();
+    private final ArrayList<InviteListener> inviteListeners = new ArrayList<>();
 
 
     /**
@@ -73,6 +84,7 @@ public class  Client extends AbstractClient {
         } else if (event instanceof LoginSuccessEvent) {
             LoginSuccessEvent lsEvent = (LoginSuccessEvent) event;
             userID = lsEvent.getId();
+            username = lsEvent.getUsername();
 
             //Notify login listeners
             loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
@@ -93,8 +105,18 @@ public class  Client extends AbstractClient {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
         } else if (event instanceof MatchFinishEvent) {
             matchListeners.forEach(listener -> listener.matchFinished(((MatchFinishEvent) event).getMatch()));
+        } else if (event instanceof NoSuchUserEvent) {
+            serverUtilListeners.forEach(listener -> listener.noSuchUserError(((NoSuchUserEvent) event).getUsername()));
+        } else if (event instanceof SendProfileEvent) {
+            serverUtilListeners.forEach(listener -> listener.profileReceived(((SendProfileEvent) event).getProfile()));
         } else if (event instanceof PlayerMoveFailedEvent) {
             logger.error("Failed a player move");
+        } else if (event instanceof InviteReceivedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteReceived(((InviteReceivedEvent) event).getInvite()));
+        } else if (event instanceof InviteAcceptedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteAccepted(((InviteAcceptedEvent) event).getInvite()));
+        } else if (event instanceof InviteDeclinedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteDeclined(((InviteDeclinedEvent) event).getInvite()));
         }
     }
 
@@ -121,7 +143,7 @@ public class  Client extends AbstractClient {
      * @throws IOException If the server is already disconnected.
      */
     public synchronized void disconnect() throws IOException {
-        sendToServer(new ClientDisconnectEvent());
+        if (isConnected()) sendToServer(new ClientDisconnectEvent());
         closeConnection();
     }
 
@@ -141,6 +163,14 @@ public class  Client extends AbstractClient {
         return matchListeners.add(listener);
     }
 
+    public boolean addServerUtilListener(ServerUtilListener listener) {
+        return serverUtilListeners.add(listener);
+    }
+
+    public boolean addInviteListener(InviteListener listener) {
+        return inviteListeners.add(listener);
+    }
+
     public boolean removeLoginListener(LoginListener listener) {
         return loginListeners.remove(listener);
     }
@@ -153,16 +183,20 @@ public class  Client extends AbstractClient {
         return matchListeners.remove(listener);
     }
 
+    public boolean removeServerUtilListener(ServerUtilListener listener) {
+        return serverUtilListeners.remove(listener);
+    }
+
+    public boolean removeInviteListener(InviteListener listener) {
+        return inviteListeners.remove(listener);
+    }
+
     public int getUserID() {
         return userID;
     }
 
-    public static void main(String[] args) {
-//        try {
-//            ///new Client("localhost", 54321);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
+    public String getUsername() {
+        return username;
     }
 
 }

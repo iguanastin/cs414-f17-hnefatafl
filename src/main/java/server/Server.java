@@ -1,15 +1,22 @@
 package server;
 
-import Game.Match;
-import Game.MatchStatus;
+import common.event.connection.ClientDisconnectEvent;
+import common.event.connection.ConnectAcceptedEvent;
+import common.event.connection.HeartbeatEvent;
+import common.event.invite.*;
+import common.game.FinishedMatch;
+import common.game.Match;
+import common.game.MatchStatus;
 import common.*;
+import common.event.login.LoginFailedEvent;
+import common.event.login.LoginRequestEvent;
+import common.event.login.LoginSuccessEvent;
+import common.event.match.*;
+import common.event.profile.*;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -25,11 +32,15 @@ public class Server extends AbstractServer {
     /**
      * SQL Statement to create the games table
      */
-    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1 FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2 FOREIGN KEY (p2_id) REFERENCES users(id));";
+    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1g FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2g FOREIGN KEY (p2_id) REFERENCES users(id));";
     /**
-     * SQL Statement to create the boards table
+     * SQL Statement to create game history table
      */
-    private static final String CREATE_BOARDS_TABLE = "CREATE TABLE boards(id INT PRIMARY KEY AUTO_INCREMENT);";
+    private static final String CREATE_HISTORY_TABLE = "CREATE TABLE played(id INT AUTO_INCREMENT PRIMARY KEY, p1_id INT, p2_id INT, end_result INT, winner_id INT, CONSTRAINT fk_p1p FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2p FOREIGN KEY (p2_id) REFERENCES users(id));";
+    /**
+     * SQL Statement used to create the invitations table
+     */
+    private static final String CREATE_INVITES_TABLE = "CREATE TABLE invites(p1_id INT, p2_id INT, CONSTRAINT fk_p1i FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2i FOREIGN KEY (p2_id) REFERENCES users(id));";
 
     /**
      * SQL Statement to drop the users table
@@ -40,13 +51,13 @@ public class Server extends AbstractServer {
      */
     private static final String DROP_GAMES_TABLE = "DROP TABLE IF EXISTS games;";
     /**
-     * SQL Statement to drop the boards table
+     * SQL Statement to drop the game history table
      */
-    private static final String DROP_BOARDS_TABLE = "DROP TABLE IF EXISTS boards;";
-
-    private static final String KNOWN_USERS = "server/knownUsers.txt";
-    private final String KEY = "thwcnmudgkvelbzfjxsoyrapiq";
-    private final String ALPHA = "abcdefghijklmnopqrstuvwxyz";
+    private static final String DROP_HISTORY_TABLE = "DROP TABLE IF EXISTS played;";
+    /**
+     * SQL Statement to drop the invitations table
+     */
+    private static final String DROP_INVITES_TABLE = "DROP TABLE IF EXISTS invites;";
 
     /**
      * SQL Database connection to the database
@@ -180,7 +191,7 @@ public class Server extends AbstractServer {
             }
             s.close();
         } catch (SQLException e) {
-            logger.error("Error initial data from db", e);
+            logger.error("Error initializing data from db", e);
         }
     }
 
@@ -213,7 +224,7 @@ public class Server extends AbstractServer {
      * @return A user created with the information provided. Null if there was an error creating the user in the database
      */
     private User createUser(String email, String name, String password) {
-        if (getUserForName(name) != null) return null;
+        if (getUser(name) != null) return null;
         logger.info("Creating new User: " + name);
         try (PreparedStatement s = dbConnection.prepareStatement("INSERT INTO users(name, email, pass) VALUES (?, ?, ?);")) {
             s.setNString(1, name);
@@ -278,7 +289,8 @@ public class Server extends AbstractServer {
         try (Statement s = dbConnection.createStatement()) {
             s.executeQuery("SELECT * FROM users;");
             s.executeQuery("SELECT * FROM games;");
-            s.executeQuery("SELECT * FROM boards;");
+            s.executeQuery("SELECT * FROM played;");
+            s.executeQuery("SELECT * FROM invites;");
             return true;
         } catch (Exception e) {
             return false;
@@ -299,8 +311,11 @@ public class Server extends AbstractServer {
         s.executeUpdate(DROP_GAMES_TABLE);
         s.executeUpdate(CREATE_GAMES_TABLE);
 
-        s.executeUpdate(DROP_BOARDS_TABLE);
-        s.executeUpdate(CREATE_BOARDS_TABLE);
+        s.executeUpdate(DROP_HISTORY_TABLE);
+        s.executeUpdate(CREATE_HISTORY_TABLE);
+
+        s.executeUpdate(DROP_INVITES_TABLE);
+        s.executeUpdate(CREATE_INVITES_TABLE);
 
         s.close();
     }
@@ -326,7 +341,7 @@ public class Server extends AbstractServer {
      * @param client Client from which the event originated.
      */
     private void handleEventFromClient(Event event, ConnectionToClient client) {
-        User user = getUserForConnection(client);
+        User user = getUser(client);
 
         if (event instanceof ClientDisconnectEvent) {
             clientDisconnected(client);
@@ -370,11 +385,7 @@ public class Server extends AbstractServer {
                 }
             } else {
                 user.setClient(client);
-                try {
-                    client.sendToClient(new LoginSuccessEvent(user.getName(), user.getId()));
-                } catch (IOException e) {
-                    logger.error("Error sending login success event", e);
-                }
+                user.send(new LoginSuccessEvent(user.getName(), user.getId()));
             }
         }else if(event instanceof RegisterRequestEvent){
             String registerEmail = ((RegisterRequestEvent) event).getEmail();
@@ -427,24 +438,66 @@ public class Server extends AbstractServer {
         if (user != null) {
             if (event instanceof PlayerMoveEvent) {
                 handlePlayerMoveEvent((PlayerMoveEvent) event, user);
-            } else if (event instanceof InviteToMatchEvent) {
-                User enemy = getUserForName(((InviteToMatchEvent) event).getName());
-                if (enemy != null && getMatch(user.getId(), enemy.getId()) == null) {
-                    startMatch(user, enemy);
+            } else if (event instanceof InviteUserEvent) {
+                handleInviteUserEvent((InviteUserEvent) event, user);
+            } else if (event instanceof RequestActiveInfoEvent) {
+                handleRequestActiveInfoEvent(user);
+            } else if (event instanceof RequestProfileEvent) {
+                handleRequestProfileEvent((RequestProfileEvent) event, user);
+            } else if (event instanceof AcceptInviteEvent) {
+                try {
+                    acceptInvitation(user, getUser(((AcceptInviteEvent) event).getSenderID()));
+                } catch (SQLException e) {
+                    logger.error("Error accepting invitation from user: " + ((AcceptInviteEvent) event).getSenderID(), e);
                 }
-
-                //TODO Make this actually invite and check for bad cases
-            } else if (event instanceof RequestCurrentGamesEvent) {
-                for (Match match : matches) {
-                    if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
-                        try {
-                            client.sendToClient(new MatchStartEvent(match));
-                        } catch (IOException e) {
-                            logger.error("Error sending in-progress match to user: " + user.getName(), e);
-                        }
-                    }
+            } else if (event instanceof DeclineInviteEvent) {
+                try {
+                    declineInvitation(getUser(((DeclineInviteEvent) event).getSenderID()), user);
+                } catch (SQLException e) {
+                    logger.error("Error declining invitation from user: " + ((DeclineInviteEvent) event).getSenderID(), e);
                 }
             }
+        }
+    }
+
+    private void handleRequestProfileEvent(RequestProfileEvent event, User user) {
+        try {
+            User target = getUser(event.getUsername());
+            if (target != null) {
+                user.send(new SendProfileEvent(new Profile(getMatchHistory(target.getId()), target.getId(), target.getName())));
+            } else {
+                user.send(new NoSuchUserEvent(event.getUsername()));
+            }
+        } catch (SQLException e) {
+            logger.error("Error getting match history for user: " + event.getUsername(), e);
+        }
+    }
+
+    private void handleRequestActiveInfoEvent(User user) {
+        for (Match match : matches) {
+            if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
+                user.send(new MatchStartEvent(match));
+            }
+        }
+        for (Invitation invite : getInvitesFor(user)) {
+            user.send(new InviteReceivedEvent(invite));
+        }
+    }
+
+    private void handleInviteUserEvent(InviteUserEvent event, User user) {
+        User enemy = getUser(event.getUsername());
+        if (enemy != null && enemy != user) {
+            if (getMatch(user.getId(), enemy.getId()) == null) {
+                try {
+                    inviteUser(user, enemy);
+                } catch (SQLException e) {
+                    //TODO: Send error stating that the user has already been invited or has a pending invite for you
+                }
+            } else {
+                //TODO Send error stating that a match already exists between these two users
+            }
+        } else {
+            user.send(new NoSuchUserEvent(event.getUsername()));
         }
     }
 
@@ -456,85 +509,201 @@ public class Server extends AbstractServer {
      */
     private void handlePlayerMoveEvent(PlayerMoveEvent event, User user) {
         Match match = getMatch(user.getId(), event.getEnemyId());
-        User enemy = getUserForID(event.getEnemyId());
 
         if (match != null) {
             if (match.getCurrentPlayer() == user.getId()) {
-                if (!match.isValidMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()])) {
-                    try {
-                        user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
-                    } catch (IOException e) {
-                        logger.error("Error sending INVALID_MOVE failure to client: " + user.getClient(), e);
-                    }
+                if (!match.isValidMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol())) {
+                    user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
                     return;
                 }
 
-                match.makeMove(match.getBoard().getTiles()[event.getFromRow()][event.getFromCol()], match.getBoard().getTiles()[event.getToRow()][event.getToCol()]);
+                match.makeMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol());
                 final boolean end = match.isOver();
                 if (!end) match.swapTurn();
 
-                notifyMatchUpdate(user, match, enemy);
+                notifyMatchUpdate(match);
                 if (end) {
-                    endMatch(user, match, enemy);
+                    endMatch(match);
                 }
             } else {
-                try {
-                    user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
-                } catch (IOException e) {
-                    logger.error("Error sending NOT_YOUR_TURN fail event to client: " + user.getClient(), e);
-                }
+                user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
             }
         } else {
-            try {
-                user.getClient().sendToClient(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
-            } catch (IOException e) {
-                logger.error("Error sending NO_MATCH fail event to client: " + user.getClient(), e);
-            }
+            user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
         }
     }
 
-    private User notifyMatchUpdate(User user, Match match, User enemy) {
-        //Notify player of match change
-        try {
-            user.getClient().forceResetAfterSend();
-            user.getClient().sendToClient(new MatchUpdateEvent(match));
-        } catch (IOException e) {
-            logger.error("Error sending updated match to player client: " + user.getClient(), e);
+    /**
+     * Notifies users in the match of an update to the match state
+     *
+     * @param match Match to notify users in
+     */
+    private void notifyMatchUpdate(Match match) {
+        User user = getUser(match.getAttacker());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchUpdateEvent(match));
         }
-
-        //Notify enemy of match change
-        if (enemy != null && enemy.isLoggedIn()) {
-            try {
-                enemy.getClient().forceResetAfterSend();
-                enemy.getClient().sendToClient(new MatchUpdateEvent(match));
-            } catch (IOException e) {
-                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
-            }
+        user = getUser(match.getDefender());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchUpdateEvent(match));
         }
-        return enemy;
     }
 
-    private void endMatch(User user, Match match, User enemy) {
+    private FinishedMatch endMatch(Match match) {
+        int reason;
+        if (match.getStatus() == MatchStatus.DEFENDER_WIN) {
+            reason = FinishedMatch.DEFENDER_WIN;
+        } else if (match.getStatus() == MatchStatus.ATTACKER_WIN) {
+            reason = FinishedMatch.ATTACKER_WIN;
+        } else {
+            logger.error("Match is not in an end-state, cannot be ended");
+            return null;
+        }
+
+        return endMatch(match, reason);
+    }
+
+    /**
+     * Ends a match and notifies users
+     *
+     * @param match Match to end
+     */
+    private FinishedMatch endMatch(Match match, int reason) {
         logger.info("Match finished " + match.getAttacker() + "v" + match.getDefender());
 
         synchronized (matches) {
             matches.remove(match);
         }
 
-        //Notify player of match finish
-        try {
-            user.getClient().sendToClient(new MatchFinishEvent(match));
-        } catch (IOException e) {
-            logger.error("Error sending updated match to player client: " + user.getClient(), e);
+        int winner;
+        if (reason == FinishedMatch.ATTACKER_WIN || reason == FinishedMatch.DEFENDER_QUIT) {
+            winner = match.getAttacker();
+        } else {
+            winner = match.getDefender();
         }
 
-        //Notify enemy of match finish
-        if (enemy != null && enemy.isLoggedIn()) {
-            try {
-                enemy.getClient().sendToClient(new MatchFinishEvent(match));
-            } catch (IOException e) {
-                logger.error("Error sending updated match to enemy client: " + enemy.getClient(), e);
+        User user = getUser(match.getAttacker());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchFinishEvent(match));
+        }
+        user = getUser(match.getDefender());
+        if (user != null && user.isLoggedIn()) {
+            user.resetOutputStream();
+            user.send(new MatchFinishEvent(match));
+        }
+
+        return createMatchHistory(match, reason, winner);
+    }
+
+    private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
+        try {
+            PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(id, p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?,?);");
+
+            int id = -1;
+
+            //Get last used ID from db
+            ResultSet rs = dbConnection.createStatement().executeQuery("SELECT TOP 1 id FROM played ORDER BY id DESC;");
+            if (rs.next()) id = rs.getInt("id");
+
+            id++;
+
+            s.setInt(1, id);
+            s.setInt(2, match.getAttacker());
+            s.setInt(3, match.getDefender());
+            s.setInt(4, matchResult);
+            s.setInt(5, matchWinner);
+
+            s.executeUpdate();
+            s.close();
+
+            return new FinishedMatch(id, match.getAttacker(), match.getDefender(), matchWinner, matchResult);
+        } catch (SQLException e) {
+            logger.error("Error committing game history to db", e);
+            return null;
+        }
+    }
+
+    private ArrayList<FinishedMatch> getMatchHistory(int userID) throws SQLException {
+        ArrayList<FinishedMatch> matches = new ArrayList<>();
+
+        PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM played WHERE p1_id=? OR p2_id=?");
+        s.setInt(1, userID);
+        s.setInt(2, userID);
+
+        ResultSet rs = s.executeQuery();
+        while (rs.next()) {
+            matches.add(new FinishedMatch(rs.getInt("id"), rs.getInt("p1_id"), rs.getInt("p2_id"), rs.getInt("winner_id"), rs.getInt("end_result")));
+        }
+
+        return matches;
+    }
+
+    private Invitation inviteUser(User sender, User target) throws SQLException {
+        PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE (p1_id=? AND p2_id=?) OR (p2_id=? AND p1_id=?)");
+        s.setInt(1, sender.getId());
+        s.setInt(2, target.getId());
+        s.setInt(3, sender.getId());
+        s.setInt(4, target.getId());
+        ResultSet rs = s.executeQuery();
+        if (rs.next()) return null;
+        rs.close();
+        s.close();
+
+        s = dbConnection.prepareStatement("INSERT INTO invites(p1_id, p2_id) VALUES (?,?);");
+        s.setInt(1, sender.getId());
+        s.setInt(2, target.getId());
+        s.executeUpdate();
+        s.close();
+
+        Invitation invite = new Invitation(sender.getId(), target.getId());
+        if (target.isLoggedIn()) target.send(new InviteReceivedEvent(invite));
+
+        return invite;
+    }
+
+    private void declineInvitation(Invitation invite) throws SQLException {
+        declineInvitation(getUser(invite.getSenderID()), getUser(invite.getTargetID()));
+    }
+
+    private void declineInvitation(User sender, User target) throws SQLException {
+        deleteInvitation(sender, target);
+
+        if (sender.isLoggedIn()) sender.send(new InviteDeclinedEvent(new Invitation(sender.getId(), target.getId())));
+    }
+
+    private void deleteInvitation(User sender, User target) throws SQLException {
+        PreparedStatement s = dbConnection.prepareStatement("DELETE FROM invites WHERE p1_id=? AND p2_id=?;");
+        s.setInt(1, sender.getId());
+        s.setInt(2, target.getId());
+        s.executeUpdate();
+    }
+
+    private void acceptInvitation(User sender, User target) throws SQLException {
+        deleteInvitation(sender, target);
+
+        if (sender.isLoggedIn()) sender.send(new InviteAcceptedEvent(new Invitation(sender.getId(), target.getId())));
+
+        startMatch(sender, target);
+    }
+
+    private ArrayList<Invitation> getInvitesFor(User target) {
+        ArrayList<Invitation> invites = new ArrayList<>();
+
+        try {
+            PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE p2_id=?;");
+            s.setInt(1, target.getId());
+            ResultSet rs = s.executeQuery();
+            while (rs.next()) {
+                invites.add(new Invitation(rs.getInt("p1_id"), rs.getInt("p2_id")));
             }
+
+            return invites;
+        } catch (SQLException e) {
+            logger.error("Error getting invitations from db", e);
+            return invites;
         }
     }
 
@@ -566,7 +735,7 @@ public class Server extends AbstractServer {
      */
     @Override
     protected synchronized void clientDisconnected(ConnectionToClient client) {
-        User user = getUserForConnection(client);
+        User user = getUser(client);
         if (user != null) user.setClient(null);
 
         logClient(client, "Disconnected");
@@ -605,7 +774,7 @@ public class Server extends AbstractServer {
      * @param client Client to match user with.
      * @return The user object that represents the client. Null if the client has not logged in yet.
      */
-    private User getUserForConnection(ConnectionToClient client) {
+    private User getUser(ConnectionToClient client) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getClient() == client) return user;
@@ -621,7 +790,7 @@ public class Server extends AbstractServer {
      * @param id ID of user to find
      * @return User with the given ID, null if no such user exists
      */
-    private User getUserForID(int id) {
+    private User getUser(int id) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getId() == id) return user;
@@ -631,7 +800,13 @@ public class Server extends AbstractServer {
         return null;
     }
 
-    private User getUserForName(String name) {
+    /**
+     * Attempts to find a known user with a given name
+     *
+     * @param name Name to search for
+     * @return User with given name, null if no such user exists
+     */
+    private User getUser(String name) {
         synchronized (users) {
             for (User user : users) {
                 if (user.getName().equalsIgnoreCase(name)) return user;
@@ -641,75 +816,24 @@ public class Server extends AbstractServer {
         return null;
     }
 
-
-    public synchronized boolean authenticate(LoginRequestEvent loginInfo, ConnectionToClient client){
-        String line;
-        boolean userExists = false;
-        //TODO: Get user from instance variable 'users' instead of text file
-
-        try {
-            FileReader fileReader = new FileReader(KNOWN_USERS);
-            BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-            while((line = bufferedReader.readLine()) != null) {
-                String[] userPass = line.split("<===>");
-
-                if(userPass[0].equals(loginInfo.getUsername())){
-                    userExists = true;
-                    String encryptedPassword = encrypt(loginInfo.getPassword());
-                    int user_id = 0; //TODO: GET ACTUAL USER ID
-
-                    //Check the sncrytion mathces in both direction
-                    if(userPass[1].equals(encryptedPassword) && decrypt(userPass[1]).equals(loginInfo.getPassword())){
-                        client.sendToClient(new LoginSuccessEvent(userPass[0], user_id));
-                    }
-                    else{
-                        client.sendToClient(new LoginFailedEvent(userPass[0]));
-                    }
-                }
-            }
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
-
-
-    public String encrypt(String plainText){
-        String encrypt = "";
-        for(char s: plainText.toCharArray()){
-            encrypt += KEY.charAt(ALPHA.indexOf(s));
-        }
-        return encrypt;
-    }
-
-    public String decrypt(String cipherText){
-        String decrypt = "";
-        for(char s: cipherText.toCharArray()){
-            decrypt += ALPHA.charAt(KEY.indexOf(s));
-        }
-        return decrypt;
-    }
-
     /**
      * Constructs and starts a server on port 54321
      *
      * @param args Command line arguments
      * @throws SQLException When server is unable to connect to the database correctly, or the database throws an exception on initialization.
      */
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
         int port = 54321;
 
         if (args.length > 0) {
             port = Integer.parseInt(args[0]);
         }
 
-        new Server(port);
+        try {
+            new Server(port);
+        } catch (SQLException e) {
+            System.exit(1);
+        }
     }
 
 }
