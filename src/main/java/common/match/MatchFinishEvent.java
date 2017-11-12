@@ -1,6 +1,7 @@
-package common;
+package common.match;
 
 
+import common.Event;
 import common.game.Match;
 
 public class MatchFinishEvent extends Event {

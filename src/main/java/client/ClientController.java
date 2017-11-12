@@ -1,8 +1,12 @@
 package client;
 
 
-import common.*;
 import common.game.Match;
+import common.match.InviteToMatchEvent;
+import common.match.PlayerMoveEvent;
+import common.profile.Profile;
+import common.profile.RequestCurrentGamesEvent;
+import common.profile.RequestProfileEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

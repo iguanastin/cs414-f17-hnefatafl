@@ -1,5 +1,7 @@
-package common;
+package common.match;
 
+
+import common.Event;
 
 public class PlayerMoveFailedEvent extends Event {
 

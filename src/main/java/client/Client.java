@@ -2,6 +2,17 @@ package client;
 
 
 import common.*;
+import common.connection.ClientDisconnectEvent;
+import common.connection.ConnectAcceptedEvent;
+import common.connection.HeartbeatEvent;
+import common.login.LoginFailedEvent;
+import common.login.LoginSuccessEvent;
+import common.match.MatchFinishEvent;
+import common.match.MatchStartEvent;
+import common.match.MatchUpdateEvent;
+import common.match.PlayerMoveFailedEvent;
+import common.profile.NoSuchUserEvent;
+import common.profile.SendProfileEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

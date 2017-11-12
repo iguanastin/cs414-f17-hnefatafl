@@ -1,5 +1,7 @@
-package common;
+package common.login;
 
+
+import common.Event;
 
 public class LoginSuccessEvent extends Event {
 

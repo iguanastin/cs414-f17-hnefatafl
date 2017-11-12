@@ -1,7 +1,7 @@
-package common;
+package common.login;
 
 
-import client.Client;
+import common.Event;
 
 public class LoginRequestEvent extends Event {
 

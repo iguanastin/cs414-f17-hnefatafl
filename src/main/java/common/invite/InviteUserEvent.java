@@ -1,12 +1,14 @@
-package common;
+package common.invite;
+
+import common.Event;
 
 
-public class RequestProfileEvent extends Event {
+public class InviteUserEvent extends Event {
 
     private final String username;
 
 
-    public RequestProfileEvent(String username) {
+    public InviteUserEvent(String username) {
         this.username = username;
     }
 
@@ -16,7 +18,7 @@ public class RequestProfileEvent extends Event {
 
     @Override
     public String toString() {
-        return "Requesting game history of user: " + getUsername();
+        return "User is inviting user: " + getUsername();
     }
 
 }

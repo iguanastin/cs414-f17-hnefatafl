@@ -1,5 +1,7 @@
-package common;
+package common.profile;
 
+
+import common.Event;
 
 public class SendProfileEvent extends Event {
 

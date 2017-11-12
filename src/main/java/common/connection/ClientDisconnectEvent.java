@@ -1,5 +1,7 @@
-package common;
+package common.connection;
 
+
+import common.Event;
 
 public class ClientDisconnectEvent extends Event {
 

@@ -1,7 +1,7 @@
 package client;
 
 
-import common.LoginRequestEvent;
+import common.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

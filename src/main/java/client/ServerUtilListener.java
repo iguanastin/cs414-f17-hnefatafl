@@ -1,7 +1,7 @@
 package client;
 
 
-import common.Profile;
+import common.profile.Profile;
 
 public interface ServerUtilListener {
 
