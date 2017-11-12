@@ -22,13 +22,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class Client extends AbstractClient {
+public class  Client extends AbstractClient {
 
     private boolean authenticated = false;
     private int userID = -1;
     private String username = null;
 
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
+    private final ArrayList<RegisterListener> registerListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
     private final ArrayList<ServerUtilListener> serverUtilListeners = new ArrayList<>();
     private final ArrayList<InviteListener> inviteListeners = new ArrayList<>();
@@ -87,7 +88,18 @@ public class Client extends AbstractClient {
 
             //Notify login listeners
             loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
-        } else if (event instanceof MatchStartEvent) {
+        }else if (event instanceof RegisterFailedEvent){
+            RegisterFailedEvent rfEvent = (RegisterFailedEvent) event;
+
+            //Notify login listeners
+            registerListeners.forEach(listener -> listener.registerFailed(rfEvent.getEmail(), rfEvent.getUsername(), rfEvent.getError()));
+        }else if (event instanceof RegisterSuccessEvent){
+            RegisterSuccessEvent rsEvent = (RegisterSuccessEvent) event;
+            userID = rsEvent.getId();
+
+            //Notify login listeners
+            registerListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getUsername(), rsEvent.getPassword()));
+        }else if (event instanceof MatchStartEvent) {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
@@ -143,6 +155,10 @@ public class Client extends AbstractClient {
         return loginListeners.add(listener);
     }
 
+    public boolean addRegisterListener(RegisterListener listener) {
+        return registerListeners.add(listener);
+    }
+
     public boolean addMatchListener(MatchListener listener) {
         return matchListeners.add(listener);
     }
@@ -157,6 +173,10 @@ public class Client extends AbstractClient {
 
     public boolean removeLoginListener(LoginListener listener) {
         return loginListeners.remove(listener);
+    }
+
+    public boolean removeRegisterListener(RegisterListener listener) {
+        return registerListeners.remove(listener);
     }
 
     public boolean removeMatchListener(MatchListener listener) {
@@ -178,4 +198,5 @@ public class Client extends AbstractClient {
     public String getUsername() {
         return username;
     }
+
 }

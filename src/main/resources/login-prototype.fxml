@@ -32,6 +32,7 @@
          <HBox alignment="CENTER" layoutX="10.0" layoutY="210.0" prefHeight="100.0" prefWidth="200.0" spacing="5.0">
             <Button mnemonicParsing="false" onAction="#loginOnAction" text="Login" />
             <Button mnemonicParsing="false" onAction="#cancelOnAction" text="Cancel" />
+            <Button mnemonicParsing="false" onAction="#openRegisterAction" text="Register" />
          </HBox>
       </VBox>
    </center>

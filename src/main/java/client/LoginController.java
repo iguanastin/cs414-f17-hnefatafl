@@ -1,6 +1,6 @@
 package client;
 
-
+import common.RegisterRequestEvent;
 import common.event.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -61,6 +61,22 @@ public class LoginController implements LoginListener {
         }
     }
 
+    public void openRegisterAction() {
+        Platform.runLater(() -> {
+            Stage stage = new Stage();
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/register-prototype.fxml"));
+                Parent root = loader.load();
+                stage.setScene(new Scene(root));
+                stage.setTitle("Register");
+                stage.show();
+
+            } catch (IOException e) {
+                logger.error("Error loading FXML doc", e);
+            }
+        });
+    }
+
     public void cancelOnAction(ActionEvent event) {
         if (client != null) {
             try {
@@ -73,7 +89,7 @@ public class LoginController implements LoginListener {
         closeWindow();
     }
 
-    private void closeWindow() {
+   private void closeWindow() {
         if (client != null) client.removeLoginListener(this);
         Platform.runLater(() -> usernameTextField.getScene().getWindow().hide());
     }
