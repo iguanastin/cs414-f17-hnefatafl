@@ -9,7 +9,14 @@ public class RegisterSuccessEvent extends Event {
 
     private final int id;
 
-
+    /**
+     * The event sent from the server to the client when the registration was sucessful
+     * This tell the client they are good to go, and can start the login process
+     * @param email
+     * @param username
+     * @param password
+     * @param id
+     */
     public RegisterSuccessEvent(String email, String username, String password, int id) {
         this.email = email;
         this.username = username;
