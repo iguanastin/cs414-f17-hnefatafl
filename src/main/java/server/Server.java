@@ -366,6 +366,13 @@ public class Server extends AbstractServer {
                 } catch (Exception e) {
                     logger.error("Error unregistering user", e);
                 }
+            } else if (event instanceof QuitMatchEvent) {
+                int reason = FinishedMatch.ATTACKER_QUIT;
+                if (((QuitMatchEvent) event).getMatch().getDefender() == user.getId()) {
+                    reason = FinishedMatch.DEFENDER_QUIT;
+                }
+
+                endMatch(((QuitMatchEvent) event).getMatch(), reason);
             }
         }
     }
