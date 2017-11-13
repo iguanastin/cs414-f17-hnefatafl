@@ -92,6 +92,9 @@ public class LoginController implements LoginListener {
         closeWindow();
     }
 
+    /**
+     * Closes this window and unregisters listeners
+     */
    private void closeWindow() {
         if (client != null) client.removeLoginListener(this);
         Platform.runLater(() -> usernameTextField.getScene().getWindow().hide());

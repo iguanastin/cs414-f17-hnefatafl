@@ -33,6 +33,12 @@ public class GameTab extends Tab {
     private final int userId;
 
 
+    /**
+     * Constructs a match view pane for a given user
+     *
+     * @param title
+     * @param userId
+     */
     public GameTab(String title, int userId) {
         super(title);
         this.userId = userId;
@@ -40,6 +46,9 @@ public class GameTab extends Tab {
         initGrid();
     }
 
+    /**
+     * Initializes the grid object. Called by the constructor
+     */
     private void initGrid() {
         grid = new GridPane();
         grid.setGridLinesVisible(true);
@@ -50,20 +59,36 @@ public class GameTab extends Tab {
         grid.setStyle("-fx-background-color: gray;");
     }
 
+    /**
+     * Sets the current match and updates the view accordingly
+     *
+     * @param match
+     */
     public void setMatch(Match match) {
         this.match = match;
 
         updateMatchView();
     }
 
+    /**
+     *
+     * @return The match that is currently being displayed
+     */
     public Match getMatch() {
         return match;
     }
 
+    /**
+     *
+     * @return The id of the local user
+     */
     public int getUserId() {
         return userId;
     }
 
+    /**
+     * Updates the view to match the state of the current match
+     */
     private void updateMatchView() {
         initGrid();
         Tile[][] tiles = match.getBoard().getTiles();
@@ -85,6 +110,14 @@ public class GameTab extends Tab {
         }
     }
 
+    /**
+     * Factory method for creating a PieceGUI for this match view
+     *
+     * @param row Row index of the piece
+     * @param col Column index of the piece
+     * @param piece Piece contained in this PieceGUI
+     * @return
+     */
     private PieceGUI initPieceGUI(int row, int col, Piece piece) {
         PieceTypeGUI type = PieceTypeGUI.ATTACKER;
         if (piece.isKing()) {
@@ -123,6 +156,13 @@ public class GameTab extends Tab {
         return pieceGUI;
     }
 
+    /**
+     * Factory method that creates a TileGUI for a given index
+     *
+     * @param row
+     * @param col
+     * @return
+     */
     private TileGUI initTileGUI(int row, int col) {
         TileGUI tileGUI = new TileGUI(row, col);
         tileGUI.setOnDragOver(event -> {
@@ -140,10 +180,22 @@ public class GameTab extends Tab {
         return tileGUI;
     }
 
+    /**
+     * Registers a move listener to this match view
+     *
+     * @param listener
+     * @return
+     */
     public boolean addMoveListener(MoveListener listener) {
         return moveListeners.add(listener);
     }
 
+    /**
+     * Unregisters a move listener from this match view
+     *
+     * @param listener
+     * @return
+     */
     public boolean removeMoveListener(MoveListener listener) {
         return moveListeners.remove(listener);
     }

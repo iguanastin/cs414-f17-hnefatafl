@@ -146,10 +146,6 @@ public class  Client extends AbstractClient {
         closeConnection();
     }
 
-    public boolean isAuthenticated() {
-        return authenticated;
-    }
-
     public boolean addLoginListener(LoginListener listener) {
         return loginListeners.add(listener);
     }
@@ -190,10 +186,18 @@ public class  Client extends AbstractClient {
         return inviteListeners.remove(listener);
     }
 
+    /**
+     *
+     * @return The ID of the currently connected user
+     */
     public int getUserID() {
         return userID;
     }
 
+    /**
+     *
+     * @return The username of the currently connected user
+     */
     public String getUsername() {
         return username;
     }

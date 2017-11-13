@@ -377,6 +377,12 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * Handles an event from a client that is declining an invitation
+     *
+     * @param event
+     * @param user
+     */
     private void handleDeclineInviteEvent(DeclineInviteEvent event, User user) {
         try {
             declineInvitation(getUser(event.getSenderID()), user);
@@ -385,6 +391,12 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * Handles an event from a client that is accepting an invitation
+     *
+     * @param event
+     * @param user
+     */
     private void handleAcceptInviteEvent(AcceptInviteEvent event, User user) {
         try {
             acceptInvitation(getUser(event.getSenderID()), user);
@@ -400,8 +412,8 @@ public class Server extends AbstractServer {
      *
      * This checks that the email is valid using a standard regex formula.
      * This also checks that both the Email and Username are unique
-     * @param event
-     * @param client
+     * @param event     Event that was received from the client
+     * @param client    The client that sent the event
      */
     private void handleRegisterRequestEvent(RegisterRequestEvent event, ConnectionToClient client) {
         String registerEmail = event.getEmail();
@@ -462,8 +474,8 @@ public class Server extends AbstractServer {
      *
      * If the login is unsucessful, it will send a LoginFailed event back to the client.
      * If the login is successful, it will send a LoginSuccess event back to the Client.
-     * @param event
-     * @param client
+     * @param event     Event sent from client
+     * @param client    Client that sent event
      */
     private void handleLoginRequestEvent(LoginRequestEvent event, ConnectionToClient client) {
         ///authenticate((LoginRequestEvent) event, client);
@@ -509,12 +521,12 @@ public class Server extends AbstractServer {
     }
 
     /**
-     * Retreives the profile for a specified user
+     * Retrieves the profile for a specified user
      *
      * If it cannot find any data for the supplied user, it returns a NoSuchUserEvent back to the client.
      * If it can find information it will send a SendProfileEvent to the client
-     * @param event
-     * @param user
+     * @param event     Event received from client
+     * @param user      User that sent this event
      */
     private void handleRequestProfileEvent(RequestProfileEvent event, User user) {
         try {
@@ -533,7 +545,7 @@ public class Server extends AbstractServer {
      * This is sent when the client successfully logged in to the server.
      *
      * This updates the info that the client can see including games, profiles, etc.
-     * @param user
+     * @param user  User that sent the request
      */
     private void handleRequestActiveInfoEvent(User user) {
         for (Match match : matches) {
@@ -550,8 +562,8 @@ public class Server extends AbstractServer {
      * The is sent by the client when they attept to invite another user to a game
      *
      * Currently does not hae any error handling
-     * @param event
-     * @param user
+     * @param event     Event that was received
+     * @param user      User that sent this event
      */
     private void handleInviteUserEvent(InviteUserEvent event, User user) {
         User enemy = getUser(event.getUsername());
@@ -622,8 +634,8 @@ public class Server extends AbstractServer {
 
     /**
      * Ends the match only when there is a win
-     * @param match
-     * @return
+     * @param match Match that needs to be ended
+     * @return      A finished match object with information about the game results
      */
     private FinishedMatch endMatch(Match match) {
         int reason;
@@ -673,12 +685,12 @@ public class Server extends AbstractServer {
     }
 
     /**
-     * Stores the match history for a given user to the server
+     * Stores the history of a given match in the database
      *
-     * @param match
-     * @param matchResult
-     * @param matchWinner
-     * @return
+     * @param match         Match to create history from
+     * @param matchResult   Result integer of the match. Values from FinishedMatch static vars
+     * @param matchWinner   The id of the user who won
+     * @return      An object representing the history of the match
      */
     private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
         try {
@@ -711,9 +723,9 @@ public class Server extends AbstractServer {
     /**
      * Retrieves the match history for a given user from the server
      *
-     * @param userID
-     * @return
-     * @throws SQLException
+     * @param userID    Id of the user to retrieve match history for
+     * @return          A list of match history objects for the user
+     * @throws SQLException     If the database throws an exception
      */
     private ArrayList<FinishedMatch> getMatchHistory(int userID) throws SQLException {
         ArrayList<FinishedMatch> matches = new ArrayList<>();
@@ -733,10 +745,10 @@ public class Server extends AbstractServer {
     /**
      * Sends an invite from one user to another
      *
-     * @param sender
-     * @param target
-     * @return
-     * @throws SQLException
+     * @param sender The user that is sending the invitation
+     * @param target The target user that is receiving the invitation
+     * @return      Null if the user cannot receive invitations. Otherwise an object representing the invitation
+     * @throws SQLException     If the database throws and exception
      */
     private Invitation inviteUser(User sender, User target) throws SQLException {
         if (target.isUnregistered()) return null;
@@ -763,16 +775,36 @@ public class Server extends AbstractServer {
         return invite;
     }
 
+    /**
+     * Declines an invitation and removes it from the system
+     *
+     * @param invite
+     * @throws SQLException
+     */
     private void declineInvitation(Invitation invite) throws SQLException {
         declineInvitation(getUser(invite.getSenderID()), getUser(invite.getTargetID()));
     }
 
+    /**
+     * Declines an invitation and removes it from the system
+     *
+     * @param sender
+     * @param target
+     * @throws SQLException
+     */
     private void declineInvitation(User sender, User target) throws SQLException {
         deleteInvitation(sender, target);
 
         if (sender.isLoggedIn()) sender.send(new InviteDeclinedEvent(new Invitation(sender.getId(), target.getId())));
     }
 
+    /**
+     * Deletes an invitation from the system
+     *
+     * @param sender
+     * @param target
+     * @throws SQLException
+     */
     private void deleteInvitation(User sender, User target) throws SQLException {
         PreparedStatement s = dbConnection.prepareStatement("DELETE FROM invites WHERE p1_id=? AND p2_id=?;");
         s.setInt(1, sender.getId());
@@ -780,6 +812,13 @@ public class Server extends AbstractServer {
         s.executeUpdate();
     }
 
+    /**
+     * Accepts and invitation and starts a match
+     *
+     * @param sender
+     * @param target
+     * @throws SQLException
+     */
     private void acceptInvitation(User sender, User target) throws SQLException {
         deleteInvitation(sender, target);
 
@@ -788,6 +827,12 @@ public class Server extends AbstractServer {
         startMatch(sender, target);
     }
 
+    /**
+     *
+     *
+     * @param target
+     * @return  A list of invitations waiting for a response from the user
+     */
     private ArrayList<Invitation> getInvitesFor(User target) {
         ArrayList<Invitation> invites = new ArrayList<>();
 

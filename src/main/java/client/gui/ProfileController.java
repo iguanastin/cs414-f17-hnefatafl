@@ -12,6 +12,11 @@ public class ProfileController {
     public Label statsLabel;
 
 
+    /**
+     * Displays the profile
+     *
+     * @param profile
+     */
     public void setProfile(Profile profile) {
         gameListView.getItems().clear();
         profile.getHistory().forEach(m -> gameListView.getItems().add(m.toString()));

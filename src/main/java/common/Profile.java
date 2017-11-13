@@ -13,24 +13,48 @@ public class Profile implements Serializable {
     private final String name;
 
 
+    /**
+     * Constructs a profile with the given info
+     *
+     * @param history
+     * @param id
+     * @param name
+     */
     public Profile(ArrayList<FinishedMatch> history, int id, String name) {
         this.history = history;
         this.id = id;
         this.name = name;
     }
 
+    /**
+     *
+     * @return A list of match history objects
+     */
     public ArrayList<FinishedMatch> getHistory() {
         return history;
     }
 
+    /**
+     *
+     * @return The name of hte user whose profile this is
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     *
+     * @return The id of the user whose profile this is
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Computes the winrate of this profile based on the match history
+     *
+     * @return A number between 0.0 and 1.0 that is the percentage of matches won
+     */
     public double getWinrate() {
         int wins = 0, losses = 0;
 
