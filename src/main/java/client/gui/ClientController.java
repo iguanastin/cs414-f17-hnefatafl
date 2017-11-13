@@ -5,6 +5,7 @@ import client.*;
 import common.Invitation;
 import common.event.invite.*;
 import common.event.login.UnregisterRequestEvent;
+import common.event.match.QuitMatchEvent;
 import common.game.Match;
 import common.event.match.PlayerMoveEvent;
 import common.Profile;
@@ -68,6 +69,22 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
         items = new MenuItem[1];
         items[0] = new MenuItem("Leave");
+        items[0].setOnAction(event -> {
+            final String work = gamesListView.getSelectionModel().getSelectedItem();
+            final int attacker = Integer.parseInt(work.substring(0, work.indexOf('v')));
+            final int defender = Integer.parseInt(work.substring(work.indexOf('v') + 1));
+
+            for (GameTab tab : gameTabs) {
+                if (tab.getMatch().getAttacker() == attacker && tab.getMatch().getDefender() == defender) {
+                    try {
+                        client.sendToServer(new QuitMatchEvent(tab.getMatch()));
+                    } catch (IOException e) {
+                        logger.error("Error sending quit match request", e);
+                    }
+                    break;
+                }
+            }
+        });
         gamesListContextMenu = new ContextMenu(items);
         gamesListView.setOnContextMenuRequested(event -> gamesListContextMenu.show(gamesListView, event.getScreenX(), event.getScreenY()));
     }
