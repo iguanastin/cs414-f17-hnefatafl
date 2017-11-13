@@ -35,6 +35,12 @@ public class Board implements Serializable {
     }
 
     //Can currently only initialize 11x11 boards
+    /**
+     * Initializes all tiles and pieces for the board (only for 11x11 boards)
+     *
+     * @param attacker id of the attacker user
+     * @param defender id of the defender user
+     */
     public void initialize(int attacker, int defender) {
         if (width == 11 && height == 11) {
             //initialize tiles
@@ -44,7 +50,9 @@ public class Board implements Serializable {
             this.initializeDefense(defender);
         }
     }
-
+    /**
+     * Initializes all tiles for the board (only for 11x11 boards)
+     */
     public void initializeTiles() {
         for (int i = 0; i < 11; i++) {
             //Place the goal tiles
@@ -62,7 +70,11 @@ public class Board implements Serializable {
         //Place the throne tile
         tiles[5][5] = new Tile(TileType.THRONE, 5, 5);
     }
-
+    /**
+     * Initializes all pieces belonging to the attacker
+     *
+     * @param attacker id of the attacker user
+     */
     public void initializeAttack(int attacker) {
         //initialize outer attackers
         for (int i = 3; i < 8; i++) {
@@ -77,7 +89,11 @@ public class Board implements Serializable {
         tiles[5][1].setPiece(new Piece(attacker, Color.BLACK, false));
         tiles[5][9].setPiece(new Piece(attacker, Color.BLACK, false));
     }
-
+    /**
+     * Initializes all pieces belonging to the defender
+     *
+     * @param defender id of the defender user
+     */
     public void initializeDefense(int defender) {
         //initialize outer defenders
         tiles[3][5].setPiece(new Piece(defender, Color.WHITE, false));
