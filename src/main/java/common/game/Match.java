@@ -1,4 +1,4 @@
-package common.game;
+package Game;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -55,7 +55,12 @@ public class Match implements Serializable {
             status = MatchStatus.ATTACKER_TURN;
         }
     }
-
+    /**
+     * Gets available moves for a piece
+     *
+     * @param tile containing the piece to check available moves for
+     * @return            all available moves for the piece on the provided tile
+     */
     public ArrayList<Tile> getAvaiableMoves(Tile tile) {
         ArrayList<Tile> availableMoves = new ArrayList<Tile>();
         //Confirm tile has a piece on it
@@ -106,8 +111,14 @@ public class Match implements Serializable {
         }
         return availableMoves;
     }
-
     // PRECONDITION: startTile contains a piece (no null checks needed)
+    /**
+     * Checks if a move is valid
+     *
+     * @param startTile the tile containing the piece to move
+     * @param endTile the tile for the piece to move to
+     * @return            true if the move can be made, false otherwise
+     */
     public boolean isValidMove(Tile startTile, Tile endTile) {
         // Check to make sure not moving opponent's pieces
         if((status == MatchStatus.ATTACKER_TURN) && (startTile.getPiece().getColor() == Color.WHITE)) {
@@ -125,11 +136,14 @@ public class Match implements Serializable {
         return true;
     }
 
-    public boolean isValidMove(int x1, int y1, int x2, int y2) {
-        return isValidMove(getBoard().getTiles()[x1][y1], getBoard().getTiles()[x2][y2]);
-    }
-
     //Moves the piece on fromTile to toTile, Returns a set of tiles who contained pieces captured by this move.
+    /**
+     * Makes a move
+     *
+     * @param fromTile the tile containing the piece to move
+     * @param toTile the tile for the piece to move to
+     * @return            any tiles that contain pieces that are captured by this move
+     */
     public HashSet<Tile> makeMove(Tile fromTile, Tile toTile) {
         HashSet<Tile> capturedTiles = new HashSet<Tile>();
         Piece toMove = fromTile.getPiece();
@@ -147,11 +161,13 @@ public class Match implements Serializable {
         return capturedTiles;
     }
 
-    public HashSet<Tile> makeMove(int x1, int y1, int x2, int y2) {
-        return makeMove(getBoard().getTiles()[x1][y1], getBoard().getTiles()[x2][y2]);
-    }
-
     //Processes capturing performed by a piece, called by makeMove
+    /**
+     * Captures pieces using the piece on the provided tile
+     *
+     * @param capturerTile the tile containing the piece doing the capturing
+     * @return            the tiles containing pieces that are captured
+     */
     private HashSet<Tile> capture(Tile capturerTile) {
         HashSet<Tile> capturedTiles = new HashSet<Tile>();
         int x = capturerTile.getX();
@@ -231,7 +247,12 @@ public class Match implements Serializable {
         }
         return capturedTiles;
     }
-    
+    /**
+     * Checks if the piece above the provided tile is capturable
+     *
+     * @param capturerTile tile containing the piece doing the capturing
+     * @return            true if the piece above can be captured, false otherwise
+     */
     private boolean aboveCapturable(Tile capturerTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = capturerTile.getX();
@@ -253,7 +274,12 @@ public class Match implements Serializable {
     	}
         return false;
     }
-    
+    /**
+     * Checks if the piece below the provided tile is capturable
+     *
+     * @param capturerTile tile containing the piece doing the capturing
+     * @return            true if the piece below can be captured, false otherwise
+     */
     private boolean belowCapturable(Tile capturerTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = capturerTile.getX();
@@ -275,7 +301,12 @@ public class Match implements Serializable {
     	}
         return false;
     }
-    
+    /**
+     * Checks if the piece left of the provided tile is capturable
+     *
+     * @param capturerTile tile containing the piece doing the capturing
+     * @return            true if the left piece can be captured, false otherwise
+     */
     private boolean leftCapturable(Tile capturerTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = capturerTile.getX();
@@ -297,7 +328,12 @@ public class Match implements Serializable {
     	}
     	return false;
     }
-
+    /**
+     * Checks if the piece to right of the provided tile is capturable
+     *
+     * @param capturerTile tile containing the piece doing the capturing
+     * @return            true if the right piece can be captured, false otherwise
+     */
     private boolean rightCapturable(Tile capturerTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = capturerTile.getX();
@@ -319,8 +355,14 @@ public class Match implements Serializable {
     	}
     	return false;
     }
-
+    
     //Captures the king if surrounded.  Returns true is king was captured, false otherwise.
+    /**
+     * Captures the king if he is surrounded by enemy pieces and/or the throne.
+     *
+     * @param kingTile tile containing the king
+     * @return            true if the king is captured, false otherwise
+     */
     private boolean kingCapture(Tile kingTile) {
         //If above, below, left, and right are all true, the king is surrounded and captured.
         boolean above = false;
@@ -341,6 +383,12 @@ public class Match implements Serializable {
         }
         return false;
     }
+    /**
+     * Checks if the piece/throne above the king can contribute to capturing it
+     *
+     * @param kingTile tile containing the king
+     * @return            true if the above piece/throne contributes to capturing the king, false otherwise
+     */
     private boolean kingCheckAbove(Tile kingTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = kingTile.getX();
@@ -358,7 +406,12 @@ public class Match implements Serializable {
         }
         return false;
     }
-    
+    /**
+     * Checks if the piece/throne below the king can contribute to capturing it
+     *
+     * @param kingTile tile containing the king
+     * @return            true if the below piece/throne contributes to capturing the king, false otherwise
+     */
     private boolean kingCheckBelow(Tile kingTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = kingTile.getX();
@@ -376,7 +429,12 @@ public class Match implements Serializable {
         }
         return false;
     }
-    
+    /**
+     * Checks if the piece/throne left of the king can contribute to capturing it
+     *
+     * @param kingTile tile containing the king
+     * @return            true if the left piece/throne contributes to capturing the king, false otherwise
+     */
     private boolean kingCheckLeft(Tile kingTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = kingTile.getX();
@@ -394,7 +452,12 @@ public class Match implements Serializable {
         }
         return false;
     }
-    
+    /**
+     * Checks if the piece/throne right of the king can contribute to capturing it
+     *
+     * @param kingTile tile containing the king
+     * @return            true if the right piece/throne contributes to capturing the king, false otherwise
+     */
     private boolean kingCheckRight(Tile kingTile) {
     	Tile[][] tiles = board.getTiles();
     	int x = kingTile.getX();
