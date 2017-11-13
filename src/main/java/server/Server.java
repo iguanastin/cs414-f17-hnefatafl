@@ -386,6 +386,16 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * This receives the register event from the client and begins the work to check the fields and authenticate
+     * If the registration info is invalid, it sends a RegistrationFailed event to the Client.
+     * If the registration is successful, it sends a RegistrationSuccess event to the Client.
+     *
+     * This checks that the email is valid using a standard regex formula.
+     * This also checks that both the Email and Username are unique
+     * @param event
+     * @param client
+     */
     private void handleRegisterRequestEvent(RegisterRequestEvent event, ConnectionToClient client) {
         String registerEmail = event.getEmail();
         String registerUserName = event.getUsername();
@@ -438,6 +448,16 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * This handles the login request event and tells the server to start the authentication process.
+     *
+     * This will try to find the user in the database and compare hashed/salted passwords before allowing the user to enter.
+     *
+     * If the login is unsucessful, it will send a LoginFailed event back to the client.
+     * If the login is successful, it will send a LoginSuccess event back to the Client.
+     * @param event
+     * @param client
+     */
     private void handleLoginRequestEvent(LoginRequestEvent event, ConnectionToClient client) {
         ///authenticate((LoginRequestEvent) event, client);
         //Auth not working yet, just let them in.
@@ -481,6 +501,14 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * Retreives the profile for a specified user
+     *
+     * If it cannot find any data for the supplied user, it returns a NoSuchUserEvent back to the client.
+     * If it can find information it will send a SendProfileEvent to the client
+     * @param event
+     * @param user
+     */
     private void handleRequestProfileEvent(RequestProfileEvent event, User user) {
         try {
             User target = getUser(event.getUsername());
@@ -494,6 +522,12 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * This is sent when the client successfully logged in to the server.
+     *
+     * This updates the info that the client can see including games, profiles, etc.
+     * @param user
+     */
     private void handleRequestActiveInfoEvent(User user) {
         for (Match match : matches) {
             if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
@@ -505,6 +539,13 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * The is sent by the client when they attept to invite another user to a game
+     *
+     * Currently does not hae any error handling
+     * @param event
+     * @param user
+     */
     private void handleInviteUserEvent(InviteUserEvent event, User user) {
         User enemy = getUser(event.getUsername());
         if (enemy != null && enemy != user) {
@@ -572,6 +613,11 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * Ends the match only when there is a win
+     * @param match
+     * @return
+     */
     private FinishedMatch endMatch(Match match) {
         int reason;
         if (match.getStatus() == MatchStatus.DEFENDER_WIN) {
@@ -619,6 +665,14 @@ public class Server extends AbstractServer {
         return createMatchHistory(match, reason, winner);
     }
 
+    /**
+     * Stores the match history for a given user to the server
+     *
+     * @param match
+     * @param matchResult
+     * @param matchWinner
+     * @return
+     */
     private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
         try {
             PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(id, p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?,?);");
@@ -647,6 +701,13 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * Retrieves the match history for a given user from the server
+     *
+     * @param userID
+     * @return
+     * @throws SQLException
+     */
     private ArrayList<FinishedMatch> getMatchHistory(int userID) throws SQLException {
         ArrayList<FinishedMatch> matches = new ArrayList<>();
 
@@ -662,6 +723,14 @@ public class Server extends AbstractServer {
         return matches;
     }
 
+    /**
+     * Sends an invite from one user to another
+     *
+     * @param sender
+     * @param target
+     * @return
+     * @throws SQLException
+     */
     private Invitation inviteUser(User sender, User target) throws SQLException {
         if (target.isUnregistered()) return null;
 
@@ -730,6 +799,15 @@ public class Server extends AbstractServer {
         }
     }
 
+    /**
+     * This will unregister the user from the system
+     *
+     * This will mark the username as taken, and will not allow other users to register with that username in the future
+     *
+     * @param user
+     * @throws IOException
+     * @throws SQLException
+     */
     private void unregister(User user) throws IOException, SQLException {
         user.unregister();
         commitChangedUser(user);
