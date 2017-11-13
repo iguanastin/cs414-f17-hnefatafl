@@ -1,5 +1,6 @@
-package client;
+package client.gui;
 
+import client.MoveListener;
 import client.game.PieceGUI;
 import client.game.PieceTypeGUI;
 import client.game.TileGUI;

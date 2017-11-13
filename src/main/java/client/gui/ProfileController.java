@@ -1,4 +1,4 @@
-package client;
+package client.gui;
 
 
 import common.Profile;

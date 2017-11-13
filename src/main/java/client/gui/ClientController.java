@@ -1,6 +1,7 @@
-package client;
+package client.gui;
 
 
+import client.*;
 import common.Invitation;
 import common.event.invite.*;
 import common.event.login.UnregisterRequestEvent;

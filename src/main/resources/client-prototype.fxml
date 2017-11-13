@@ -16,7 +16,7 @@
 
 
 <VBox xmlns="http://javafx.com/javafx/8.0.112" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="client.ClientController">
+      fx:controller="client.gui.ClientController">
     <MenuBar>
         <Menu mnemonicParsing="false" text="User">
             <MenuItem onAction="#logoutMenuItemOnAction" mnemonicParsing="false" text="Logout"/>

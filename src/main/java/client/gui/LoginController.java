@@ -1,5 +1,7 @@
-package client;
+package client.gui;
 
+import client.Client;
+import client.LoginListener;
 import common.event.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
