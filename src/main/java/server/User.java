@@ -206,4 +206,8 @@ public class User {
     public boolean equals(Object obj) {
         return obj instanceof User && id == ((User) obj).getId();
     }
+    @Override
+    public int hashCode() {
+    	return id;
+    }
 }
