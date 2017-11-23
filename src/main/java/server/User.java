@@ -100,6 +100,12 @@ public class User {
         this.client = client;
     }
 
+    /**
+     * Attempts to send an object to the client
+     *
+     * @param o Object to be sent to the client. Must be serializable
+     * @return True if successful, false if stream is not active
+     */
     public boolean send(Object o) {
         if (isLoggedIn()) {
             try {
@@ -113,6 +119,11 @@ public class User {
         return false;
     }
 
+    /**
+     * Attempts to reset the output stream. Necessary when sending the same object multiple times in different states
+     *
+     * @return True if successful, false if stream not active
+     */
     public boolean resetOutputStream() {
         if (isLoggedIn()) {
             try {
