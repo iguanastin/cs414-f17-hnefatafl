@@ -505,5 +505,11 @@ public class Match implements Serializable {
     public boolean equals(Object obj) {
         return obj instanceof Match && ((Match) obj).getAttacker() == getAttacker() && ((Match) obj).getDefender() == getDefender();
     }
+    @Override
+    public int hashCode() {
+    	int hash = 17 * attacker;
+    	hash = hash * 31 + defender;
+    	return hash;
+    }
 
 }

@@ -19,7 +19,7 @@ public class Board implements Serializable {
     public Board(int width, int height, Tile[][] tiles) {
         this.width = width;
         this.height = height;
-        tiles = new Tile[height][width];
+        this.tiles = new Tile[height][width];
     }
 
     public Tile[][] getTiles() {
