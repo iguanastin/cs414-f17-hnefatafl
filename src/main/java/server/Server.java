@@ -108,6 +108,8 @@ public class Server extends AbstractServer {
         connectToDB();
 
         initHeartbeatThread();
+
+        createUser("AI@robots.com", "AI", "Mr.Robot");
     }
 
     /**
@@ -568,7 +570,16 @@ public class Server extends AbstractServer {
     private void handleInviteUserEvent(InviteUserEvent event, User user) {
         User enemy = getUser(event.getUsername());
         if (enemy != null && enemy != user) {
-            if (getMatch(user.getId(), enemy.getId()) == null) {
+
+            if (enemy.getName().equalsIgnoreCase("ai")) {
+                //TODO: Start the match against the bot.
+                try {
+                    inviteUser(user, enemy);
+                } catch (SQLException e) {
+                    //TODO: Send error stating that the user has already been invited or has a pending invite for you
+                }
+            }
+            else if (getMatch(user.getId(), enemy.getId()) == null) {
                 try {
                     inviteUser(user, enemy);
                 } catch (SQLException e) {
@@ -751,6 +762,7 @@ public class Server extends AbstractServer {
      * @throws SQLException     If the database throws and exception
      */
     private Invitation inviteUser(User sender, User target) throws SQLException {
+        //TODO: Register the AI user so that you can play games with it
         if (target.isUnregistered()) return null;
 
         PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE (p1_id=? AND p2_id=?) OR (p2_id=? AND p1_id=?)");
