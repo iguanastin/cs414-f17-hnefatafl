@@ -1,6 +1,25 @@
 package client;
 
+import common.Event;
+import common.event.match.MatchUpdateEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+
 public class AI extends AbstractClient {
+    private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
+    private final ArrayList<RegisterListener> registerListeners = new ArrayList<>();
+    private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
+    private final ArrayList<ServerUtilListener> serverUtilListeners = new ArrayList<>();
+    private final ArrayList<InviteListener> inviteListeners = new ArrayList<>();
+
+
+    /**
+     * SLF$J Logger for logging info for this client
+     */
+    private final Logger logger = LoggerFactory.getLogger(Client.class);
+
 
     /**
      * Constructs the client.
@@ -14,6 +33,14 @@ public class AI extends AbstractClient {
 
     @Override
     protected void handleMessageFromServer(Object msg) {
+        logger.info("[SERVER]: " + msg);
 
+        if (msg instanceof Event) handleEventFromServer((Event) msg);
+    }
+
+    private void handleEventFromServer(Event event) {
+        if (event instanceof MatchUpdateEvent) {
+            matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
+        }
     }
 }
