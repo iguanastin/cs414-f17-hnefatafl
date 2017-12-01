@@ -1,5 +1,6 @@
 package server;
 
+import client.AI;
 import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
@@ -461,6 +462,7 @@ public class Server extends AbstractServer {
                         } catch (IOException e) {
                             logger.error("Error sending register success event", e);
                         }
+
                     } else {
                         //TODO: Send error creating user
                     }
@@ -572,9 +574,9 @@ public class Server extends AbstractServer {
         if (enemy != null && enemy != user) {
 
             if (enemy.getName().equalsIgnoreCase("ai")) {
-                //TODO: Start the match against the bot.
                 try {
-                    inviteUser(user, enemy);
+                    //Invite sent to the AI, accept the Invite and start the match
+                    acceptInvitation(user, enemy);
                 } catch (SQLException e) {
                     //TODO: Send error stating that the user has already been invited or has a pending invite for you
                 }
@@ -603,7 +605,7 @@ public class Server extends AbstractServer {
         Match match = getMatch(user.getId(), event.getEnemyId());
 
         if (match != null) {
-            if (match.getCurrentPlayer() == user.getId()) {
+             if (match.getCurrentPlayer() == user.getId()) {
                 if (!match.isValidMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol())) {
                     user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
                     return;
@@ -632,6 +634,7 @@ public class Server extends AbstractServer {
      */
     private void notifyMatchUpdate(Match match) {
         User user = getUser(match.getAttacker());
+
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchUpdateEvent(match));
@@ -787,6 +790,7 @@ public class Server extends AbstractServer {
         return invite;
     }
 
+
     /**
      * Declines an invitation and removes it from the system
      *
@@ -837,7 +841,7 @@ public class Server extends AbstractServer {
         if (sender.isLoggedIn()) sender.send(new InviteAcceptedEvent(new Invitation(sender.getId(), target.getId())));
 
         startMatch(sender, target);
-    }
+}
 
     /**
      *

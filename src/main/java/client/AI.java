@@ -1,13 +1,14 @@
 package client;
 
 import common.Event;
+import common.event.invite.InviteReceivedEvent;
 import common.event.match.MatchUpdateEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
-public class AI extends AbstractClient {
+public class AI extends Client {
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
     private final ArrayList<RegisterListener> registerListeners = new ArrayList<>();
     private final ArrayList<MatchListener> matchListeners = new ArrayList<>();
@@ -41,6 +42,12 @@ public class AI extends AbstractClient {
     private void handleEventFromServer(Event event) {
         if (event instanceof MatchUpdateEvent) {
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
+        }else if (event instanceof InviteReceivedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteReceived(((InviteReceivedEvent) event).getInvite()));
         }
+    }
+
+    public void makeMove(){
+        System.out.println("ASDASDASD");
     }
 }

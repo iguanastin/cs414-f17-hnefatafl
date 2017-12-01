@@ -101,7 +101,12 @@ public class  Client extends AbstractClient {
         }else if (event instanceof MatchStartEvent) {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
+            if(this.getUsername().equalsIgnoreCase("ai")){
+                AI ai = new AI(this.getHost(), this.getPort());
+                ai.makeMove();
+            }
             matchListeners.forEach(listener -> listener.matchUpdated(((MatchUpdateEvent) event).getMatch()));
+
         } else if (event instanceof MatchFinishEvent) {
             matchListeners.forEach(listener -> listener.matchFinished(((MatchFinishEvent) event).getMatch()));
         } else if (event instanceof NoSuchUserEvent) {

@@ -108,11 +108,20 @@ public class User {
      */
     public boolean send(Object o) {
         if (isLoggedIn()) {
-            try {
-                getClient().sendToClient(o);
-                return true;
-            } catch (IOException e) {
-                return false;
+            if (this.getName().equalsIgnoreCase("ai")){
+                try {
+                    getClient().sendToClient(o);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else{
+                try {
+                    getClient().sendToClient(o);
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                }
             }
         }
 
