@@ -1,5 +1,6 @@
 package server;
 
+import client.AIClient;
 import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
@@ -106,6 +107,14 @@ public class Server extends AbstractServer {
         }
 
         connectToDB();
+
+        //Create and start AI client
+        if (getUser("AI") == null) createUser("ai@robot.com", "AI", "Mr.Robot");
+        try {
+            new AIClient("localhost", 54321);
+        } catch (IOException e) {
+            logger.error("Error starting AI client", e);
+        }
 
         initHeartbeatThread();
     }
