@@ -127,6 +127,11 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     public void inviteButtonOnAction(ActionEvent event) {
         try {
             client.sendToServer(new InviteUserEvent(usernameTextField.getText()));
+
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setTitle("Invite sent");
+            a.setContentText("Invite sent to: " + usernameTextField.getText());
+            a.showAndWait();
         } catch (IOException e) {
             logger.error("Error sending invite to user: " + usernameTextField.getText(), e);
         }
