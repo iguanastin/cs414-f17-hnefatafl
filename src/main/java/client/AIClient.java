@@ -1,6 +1,7 @@
 package client;
 
 import common.Invitation;
+import common.event.invite.AcceptInviteEvent;
 import common.event.invite.InviteAcceptedEvent;
 import common.event.login.LoginRequestEvent;
 import common.game.Match;
@@ -23,6 +24,7 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     @Override
     public void matchUpdated(Match match) {
         //TODO: Handle AI logic and send a move request
+        
     }
 
     @Override
@@ -39,7 +41,7 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     public void inviteReceived(Invitation invite) {
         //TODO: Send an AcceptInviteEvent immediately
         try {
-            sendToServer(new InviteAcceptedEvent(invite));
+            sendToServer(new AcceptInviteEvent(invite.getSenderID()));
         } catch (IOException e) {
             e.printStackTrace();
         }
