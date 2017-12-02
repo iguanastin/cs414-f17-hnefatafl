@@ -31,8 +31,12 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     @Override
     public void matchUpdated(Match match) {
     	int enemyID = match.getAttacker();
-        if (enemyID == AIid) enemyID = match.getDefender();
-        int move[] = AI.makeMove(match, AIid);
+    	boolean isDefender = true;
+        if (enemyID == AIid) { 
+        	enemyID = match.getDefender();
+        	isDefender = false;
+        }
+        int move[] = AI.makeMove(match, AIid, isDefender);
     	try {
             sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
         } catch (IOException e) {
