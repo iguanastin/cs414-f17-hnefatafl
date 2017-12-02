@@ -1,6 +1,5 @@
 package server;
 
-import client.AIClient;
 import common.event.connection.ClientDisconnectEvent;
 import common.event.connection.ConnectAcceptedEvent;
 import common.event.connection.HeartbeatEvent;
@@ -15,6 +14,8 @@ import common.event.profile.*;
 import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import client.ai.AIClient;
 
 import java.io.IOException;
 import java.sql.*;
