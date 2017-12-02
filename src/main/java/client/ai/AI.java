@@ -95,7 +95,36 @@ public class AI {
 		}
 		else {
 			for (int i = 0; i < attackPieces.size(); i++) {
-				
+				Tile tile = attackPieces.get(i);
+				ArrayList<Tile> moves = getAvailableMoves(tiles, tile);
+				for (int j = 0; j < moves.size(); j++) {
+					//Copy board state so we can safely modify it
+					Tile[][] moveTiles = tiles.clone();
+					//Make the move
+					moves.get(j).setPiece(tile.getPiece());
+					tile.removePiece();
+					HashSet<Tile> captured = capture(moveTiles, moves.get(j));
+					ArrayList<Tile> newDefense = new ArrayList<Tile>();
+					for (int k = 0; k < defensePieces.size(); k++) {
+						if (!(captured.contains(defensePieces.get(k)))) newDefense.add(defensePieces.get(k));
+					}
+					//Explore the new move from other perspective
+					double[] move = negamaxab(moveTiles, depth-1, AIid, !(isDefender), attackPieces, newDefense, -b, -a);
+					//Populate move data
+					move[0] = tile.getX();
+					move[1] = tile.getY();
+					move[2] = moves.get(j).getX();
+					move[3] = moves.get(j).getY();
+					//Invert the opponent's value
+					move[4] = -move[4];
+					if (move[4] > bestMove[4]) {
+						bestMove = move;
+					}
+					if (move[4] > a) {
+						a = move[4];
+					}
+					if (a >= b) break;
+				}
 			}
 		}
 		return bestMove;
