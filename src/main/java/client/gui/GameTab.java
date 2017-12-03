@@ -34,12 +34,11 @@ public class GameTab extends Tab {
     public static final Color ATTACKER_COLOR = Color.WHITE;
     public static final Color DEFENDER_COLOR = Color.BLACK;
 
-    private static final String GRID_COLOR = "gray";
-    private static final String TILE_COLOR = "transparent";
-    private static final String TILE_COLOR_ALT = "darkgray";
-    private static final String TILE_COLOR_AVAILABLE = "yellow";
+    private static final String GRID_COLOR = "#1380EC";
+    private static final String TILE_COLOR = "#1380EC";
+    private static final String TILE_COLOR_ALT = "#133CEC";
+    private static final String TILE_COLOR_AVAILABLE = "#EC1349";
     private static final String TILE_COLOR_THRONE = "orange";
-    private static final String TILE_COLOR_THRONE_AVAILABLE = "red";
     private static final String TILE_COLOR_MOVEABLE = "green";
 
     private Match match;
@@ -112,6 +111,7 @@ public class GameTab extends Tab {
             for (int col = 0; col < tiles[0].length; col++) {
                 TileGUI tileGUI = initTileGUI(tiles[col][row], row, col);
 
+                tileGUI.setBackgroundColor(TILE_COLOR);
                 if ((col + row) % 2 == 0) tileGUI.setBackgroundColor(TILE_COLOR_ALT);
 
                 if (tiles[col][row].getType() == TileType.THRONE) {
@@ -177,6 +177,7 @@ public class GameTab extends Tab {
                     ((TileGUI) node).setBackgroundColor(TILE_COLOR);
                     if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0)
                         ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
+                    if (((TileGUI) node).getTile().getType() == TileType.THRONE) ((TileGUI) node).setBackgroundColor(TILE_COLOR_THRONE);
                 }
             }
 
