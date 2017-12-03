@@ -22,7 +22,7 @@ public class MatchTest {
             for (int j = 0; j < tiles[i].length; j++) {
                 if (tiles[i][j].hasPiece()) {
                     if (!(tiles[i][j].getPiece().isKing())) {
-                        tiles[i][j].removePiece();
+                        tiles[i][j].setPiece(null);
                     }
                 }
             }
@@ -65,7 +65,7 @@ public class MatchTest {
         assertEquals("[(4, 5), (3, 5), (2, 5), (1, 5), (0, 5), (6, 5), (7, 5), (8, 5), (9, 5), (10, 5), (5, 4), (5, 3), (5, 2), (5, 1), (5, 0), (5, 6), (5, 7), (5, 8), (5, 9), (5, 10)]", kingMoves.toString());
         //Move the King 1 space away from the throne
         moves[6][5].setPiece(kingTile.getPiece());
-        kingTile.removePiece();
+        kingTile.setPiece(null);
         //test throne logic
         kingMoves = match.getAvaiableMoves(moves[6][5]);
         assertEquals("[(7, 5), (8, 5), (9, 5), (10, 5), (6, 4), (6, 3), (6, 2), (6, 1), (6, 0), (6, 6), (6, 7), (6, 8), (6, 9), (6, 10)]", kingMoves.toString());
@@ -94,7 +94,7 @@ public class MatchTest {
         Tile[][] moves = tiles;
         removeAllExceptKing(moves);
         //Replace king with regular piece
-        moves[5][5].removePiece();
+        moves[5][5].setPiece(null);
         moves[5][5].setPiece(new Piece(defender, Color.WHITE, false));
         //Surround middle piece with enemy pieces
         moves[4][5].setPiece(new Piece(attacker, Color.BLACK, false));
