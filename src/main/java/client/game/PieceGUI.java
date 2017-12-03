@@ -1,5 +1,6 @@
 package client.game;
 
+import client.gui.GameTab;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -8,51 +9,40 @@ public class PieceGUI extends StackPane {
 
     private static final int TILE_SIZE = 75;
 
-    private double mouseX, mouseY;
-    private double oldX, oldY;
     private int xCoord, yCoord;
 
-    public PieceGUI(int x_coord, int y_coord, PieceTypeGUI type) {
-        movePiece(x_coord, y_coord);
+    private Circle circle;
+    private PieceTypeGUI type;
 
+    public PieceGUI(int x_coord, int y_coord, PieceTypeGUI type) {
+        this.type = type;
         this.xCoord = x_coord;
         this.yCoord = y_coord;
 
-        Circle piece = new Circle(TILE_SIZE * 0.3);
+        circle = new Circle(TILE_SIZE * 0.3);
         switch(type) {
             case ATTACKER:
-                piece.setFill(Color.BLACK);
+                circle.setFill(GameTab.ATTACKER_COLOR);
                 break;
 
             case DEFENDER:
-                piece.setFill(Color.WHITE);
+                circle.setFill(GameTab.DEFENDER_COLOR);
                 break;
 
             case KING:
-                piece.setFill(Color.GOLD);
+                circle.setFill(GameTab.KING_COLOR);
                 break;
         }
-        getChildren().add(piece);
-
-        // Remember start location for mouse move
-        setOnMousePressed(e -> {
-            mouseX = e.getSceneX();
-            mouseY = e.getSceneY();
-        });
-
-        setOnMouseDragged(e -> {
-            relocate(e.getSceneX() - mouseX + oldX, e.getSceneY() - mouseY + oldY);
-        });
+        getChildren().add(circle);
     }
 
-    public void movePiece(int x_coord, int y_coord) {
-        oldX = x_coord * TILE_SIZE;
-        oldY = y_coord * TILE_SIZE;
-        relocate(oldX, oldY);
+    public PieceTypeGUI getType() {
+        return type;
     }
 
-    public double getOldY() { return oldY; }
-    public double getOldX() { return oldX; }
+    public Circle getCircle() {
+        return circle;
+    }
 
     public int getxCoord() {
         return xCoord;

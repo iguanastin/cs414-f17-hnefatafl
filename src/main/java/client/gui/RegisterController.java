@@ -75,8 +75,10 @@ public class RegisterController implements RegisterListener {
     }
 
     private void closeRegisterWindow() {
-        if (client != null) client.removeRegisterListener(this);
-        Platform.runLater(() -> registerUsernameField.getScene().getWindow().hide());
+        Platform.runLater(() -> {
+            if (client != null) client.removeRegisterListener(this);
+            registerUsernameField.getScene().getWindow().hide();
+        });
     }
 
     @Override
