@@ -15,6 +15,8 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import client.ai.AIClient;
+
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -106,6 +108,14 @@ public class Server extends AbstractServer {
         }
 
         connectToDB();
+
+        //Create and start AI client
+        if (getUser("AI") == null) createUser("ai@robot.com", "AI", "Mr.Robot");
+        try {
+            new AIClient("localhost", 54321);
+        } catch (IOException e) {
+            logger.error("Error starting AI client", e);
+        }
 
         initHeartbeatThread();
     }
