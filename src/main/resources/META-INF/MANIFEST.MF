@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: server.Server
+Main-Class: edu.colostate.cs.cs414.hnefatafl.server.Server

@@ -23,7 +23,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>main.server.Server</mainClass>
+                            <mainClass>main.edu.colostate.cs.cs414.hnefatafl.server.Server</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
