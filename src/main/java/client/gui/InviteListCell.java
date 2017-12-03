@@ -1,16 +1,19 @@
 package client.gui;
 
 import common.UserID;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 
 
 public class InviteListCell extends ListCell<UserID> {
 
-    private HBox pane;
+    private BorderPane pane;
     private Label infoLabel;
 
 
@@ -22,7 +25,9 @@ public class InviteListCell extends ListCell<UserID> {
 
         infoLabel = new Label("Invitation from: ...");
         HBox.setHgrow(infoLabel, Priority.ALWAYS);
-        pane = new HBox(5, infoLabel, acceptButton, declineButton);
+        HBox hBox = new HBox(5, acceptButton, declineButton);
+
+        pane = new BorderPane(infoLabel, null, hBox, null, null);
     }
 
     @Override
