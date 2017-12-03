@@ -88,7 +88,6 @@ public class GameTab extends Tab {
     }
 
     /**
-     *
      * @return The match that is currently being displayed
      */
     public Match getMatch() {
@@ -96,7 +95,6 @@ public class GameTab extends Tab {
     }
 
     /**
-     *
      * @return The id of the local user
      */
     public UserID getUserId() {
@@ -114,7 +112,7 @@ public class GameTab extends Tab {
             for (int col = 0; col < tiles[0].length; col++) {
                 TileGUI tileGUI = initTileGUI(tiles[col][row], row, col);
 
-                if ((col+row) % 2 == 0) tileGUI.setBackgroundColor(TILE_COLOR_ALT);
+                if ((col + row) % 2 == 0) tileGUI.setBackgroundColor(TILE_COLOR_ALT);
 
                 if (tiles[col][row].getType() == TileType.THRONE) {
                     tileGUI.setBackgroundColor(TILE_COLOR_THRONE);
@@ -123,11 +121,7 @@ public class GameTab extends Tab {
                 Piece piece = tiles[col][row].getPiece();
                 if (piece != null) {
                     if (match.getCurrentPlayer().equals(getUserId()) && piece.getUser().equals(getUserId())) {
-                        if (tiles[col][row].getType() == TileType.THRONE) {
-                            tileGUI.setBackgroundColor(TILE_COLOR_THRONE_AVAILABLE);
-                        } else {
-                            tileGUI.setBackgroundColor(TILE_COLOR_AVAILABLE);
-                        }
+                        tileGUI.setBackgroundColor(TILE_COLOR_AVAILABLE);
                     }
 
                     PieceGUI pieceGUI = initPieceGUI(row, col, piece);
@@ -140,8 +134,8 @@ public class GameTab extends Tab {
     /**
      * Factory method for creating a PieceGUI for this match view
      *
-     * @param row Row index of the piece
-     * @param col Column index of the piece
+     * @param row   Row index of the piece
+     * @param col   Column index of the piece
      * @param piece Piece contained in this PieceGUI
      * @return
      */
@@ -181,7 +175,8 @@ public class GameTab extends Tab {
             for (Node node : grid.getChildren()) {
                 if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
                     ((TileGUI) node).setBackgroundColor(TILE_COLOR);
-                    if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0) ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
+                    if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0)
+                        ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
                 }
             }
 
@@ -189,7 +184,8 @@ public class GameTab extends Tab {
                 pieceGUI.getCircle().setFill(ATTACKER_COLOR);
             } else if (pieceGUI.getType() == PieceTypeGUI.DEFENDER) {
                 pieceGUI.getCircle().setFill(DEFENDER_COLOR);
-            } if (pieceGUI.getType() == PieceTypeGUI.KING) {
+            }
+            if (pieceGUI.getType() == PieceTypeGUI.KING) {
                 pieceGUI.getCircle().setFill(KING_COLOR);
             }
         });

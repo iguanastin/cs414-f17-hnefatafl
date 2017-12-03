@@ -3,17 +3,18 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import common.UserID;
 import common.game.*;
 
 public class AI {
 	private Match match;
-	private int AIid;
+	private UserID AIid;
 	private boolean isDefender;
 	private char[][] aiBoard;
 	private ArrayList<Coordinate> attackTiles;
 	private ArrayList<Coordinate> defendTiles;
 	
-	public AI(Match match, int AIid, boolean isDefender) {
+	public AI(Match match, UserID AIid, boolean isDefender) {
 		this.match = match;
 		this.AIid = AIid;
 		this.isDefender = isDefender;
@@ -29,7 +30,7 @@ public class AI {
 						aiBoard[i][j] = 'K';
 						defendTiles.add(new Coordinate(i, j));
 					}
-					else if (tiles[i][j].getPiece().getUser() == AIid) {
+					else if (tiles[i][j].getPiece().getUser().equals(AIid)) {
 						if (isDefender) {
 							aiBoard[i][j] = 'W';
 							defendTiles.add(new Coordinate(i, j));

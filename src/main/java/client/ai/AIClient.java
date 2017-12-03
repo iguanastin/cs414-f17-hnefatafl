@@ -1,6 +1,7 @@
 package client.ai;
 
 import common.Invitation;
+import common.UserID;
 import common.event.invite.AcceptInviteEvent;
 import common.event.invite.InviteAcceptedEvent;
 import common.event.login.LoginRequestEvent;
@@ -19,9 +20,7 @@ import org.slf4j.LoggerFactory;
 
 public class AIClient extends Client implements MatchListener, InviteListener {
 	//ID of the AI player
-	static int AIid = 33;
-
-    private final Logger logger = LoggerFactory.getLogger(Client.class);
+	private final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public AIClient(String host, int port) throws IOException {
         super(host, port);
@@ -35,18 +34,18 @@ public class AIClient extends Client implements MatchListener, InviteListener {
 
     @Override
     public void matchUpdated(Match match) {
-        int enemyID = match.getAttacker();
+        UserID enemy = match.getAttacker();
         boolean isDefender = true;
-        if (enemyID == AIid) {
-            enemyID = match.getDefender();
+        if (enemy == getUserID()) {
+            enemy = match.getDefender();
             isDefender = false;
         }
         if (isDefender && match.getStatus().equals(MatchStatus.DEFENDER_TURN) || (!(isDefender) && match.getStatus().equals(MatchStatus.ATTACKER_TURN)))
         {
-            AI ai = new AI(match, AIid, isDefender);
+            AI ai = new AI(match, getUserID(), isDefender);
             int move[] = ai.makeMove();
             try {
-                sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
+                sendToServer(new PlayerMoveEvent(enemy, move[0], move[1], move[2], move[3]));
             } catch (IOException e) {
                 logger.error("Error sending player move to server", e);
             }
@@ -67,7 +66,7 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     public void inviteReceived(Invitation invite) {
         //TODO: Send an AcceptInviteEvent immediately
         try {
-            sendToServer(new AcceptInviteEvent(invite.getSenderID()));
+            sendToServer(new AcceptInviteEvent(invite.getSender()));
         } catch (IOException e) {
             e.printStackTrace();
         }
