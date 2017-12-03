@@ -12,11 +12,11 @@ public class FinishedMatch implements Serializable {
     public static final int ATTACKER_QUIT = 2;
     public static final int DEFENDER_QUIT = 3;
 
-    private final int id, winner, endState;
-    private final UserID p1, p2;
+    private final int id, endState;
+    private final UserID p1, p2, winner;
 
 
-    public FinishedMatch(int id, UserID p1, UserID p2, int winner, int endState) {
+    public FinishedMatch(int id, UserID p1, UserID p2, UserID winner, int endState) {
         this.id = id;
         this.p1 = p1;
         this.p2 = p2;
@@ -36,7 +36,7 @@ public class FinishedMatch implements Serializable {
         return p2;
     }
 
-    public int getWinner() {
+    public UserID getWinner() {
         return winner;
     }
 
@@ -46,9 +46,13 @@ public class FinishedMatch implements Serializable {
 
     @Override
     public String toString() {
-        String result = getAttacker() + " vs " + getDefender() + " - Winner: " + getWinner();
+        String result = getAttacker().getName() + " vs " + getDefender().getName() + " - Winner: " + getWinner().getName();
 
-        if (getEndState() == ATTACKER_QUIT || getEndState() == DEFENDER_QUIT) result += " because enemy quit";
+        if (getEndState() == ATTACKER_QUIT) {
+            result += " because " + getAttacker().getName() + " quit";
+        } else if (getEndState() == DEFENDER_QUIT) {
+            result += " because " + getDefender().getName() + " quit";
+        }
 
         return result;
     }

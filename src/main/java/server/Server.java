@@ -702,11 +702,11 @@ public class Server extends AbstractServer {
             matches.remove(match);
         }
 
-        int winner;
+        UserID winner;
         if (reason == FinishedMatch.ATTACKER_WIN || reason == FinishedMatch.DEFENDER_QUIT) {
-            winner = match.getAttacker().getId();
+            winner = match.getAttacker();
         } else {
-            winner = match.getDefender().getId();
+            winner = match.getDefender();
         }
 
         User user = getUser(match.getAttacker().getId());
@@ -741,7 +741,7 @@ public class Server extends AbstractServer {
      * @param matchWinner   The id of the user who won
      * @return      An object representing the history of the match
      */
-    private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
+    private FinishedMatch createMatchHistory(Match match, int matchResult, UserID matchWinner) {
         try {
             PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(id, p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?,?);");
 
@@ -757,7 +757,7 @@ public class Server extends AbstractServer {
             s.setInt(2, match.getAttacker().getId());
             s.setInt(3, match.getDefender().getId());
             s.setInt(4, matchResult);
-            s.setInt(5, matchWinner);
+            s.setInt(5, matchWinner.getId());
 
             s.executeUpdate();
             s.close();
@@ -785,7 +785,7 @@ public class Server extends AbstractServer {
 
         ResultSet rs = s.executeQuery();
         while (rs.next()) {
-            matches.add(new FinishedMatch(rs.getInt("id"), getUser(rs.getInt("p1_id")).getId(), getUser(rs.getInt("p2_id")).getId(), rs.getInt("winner_id"), rs.getInt("end_result")));
+            matches.add(new FinishedMatch(rs.getInt("id"), getUser(rs.getInt("p1_id")).getId(), getUser(rs.getInt("p2_id")).getId(), getUser(rs.getInt("winner_id")).getId(), rs.getInt("end_result")));
         }
 
         return matches;

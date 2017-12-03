@@ -48,7 +48,7 @@ public class Profile implements Serializable {
         int wins = 0, losses = 0;
 
         for (FinishedMatch m : history) {
-            if (m.getWinner() == id.getId()) {
+            if (m.getWinner().equals(id)) {
                 wins++;
             } else {
                 losses++;

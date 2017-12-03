@@ -139,7 +139,7 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
             UserID enemy = match.getAttacker();
             if (match.getAttacker().equals(client.getUserID())) enemy = match.getDefender();
 
-            GameTab tab = new GameTab("Against: " + enemy, client.getUserID());
+            GameTab tab = new GameTab("Against: " + enemy.getName(), client.getUserID());
             gameTabs.add(tab);
             tabPane.getTabs().add(tab);
 

@@ -23,7 +23,7 @@ public class ProfileController {
         gameListView.getItems().clear();
         profile.getHistory().forEach(m -> gameListView.getItems().add(m.toString()));
 
-        ((Stage) gameListView.getScene().getWindow()).setTitle(profile.getId().toString());
+        ((Stage) gameListView.getScene().getWindow()).setTitle("Profile of: " + profile.getId().getName());
 
         DecimalFormat df = new DecimalFormat();
         df.setMaximumFractionDigits(2);
