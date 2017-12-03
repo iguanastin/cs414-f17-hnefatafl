@@ -17,11 +17,13 @@ public class AI {
 		this.match = match;
 		this.AIid = AIid;
 		this.isDefender = isDefender;
+		attackTiles = new ArrayList<Coordinate>();
+		defendTiles = new ArrayList<Coordinate>();
 		aiBoard = new char[11][11];
 		//Populate AI Board
 		Tile[][] tiles = match.getBoard().getTiles();
 		for (int i = 0; i < tiles.length; i++) {
-			for (int j = 0; i < tiles.length; j++) {
+			for (int j = 0; j < tiles[i].length; j++) {
 				if (tiles[i][j].hasPiece()) {
 					if (tiles[i][j].getPiece().isKing()) {
 						aiBoard[i][j] = 'K';
@@ -62,27 +64,74 @@ public class AI {
 		ArrayList<Coordinate> defendTiles = new ArrayList<Coordinate>(this.defendTiles);
 		//Find the best move
 		double move[] = new double[5];
-		move = negamaxab(tiles, 1, isDefender, attackTiles, defendTiles, -9999999, 9999999);
+		move = negamaxab(tiles, 4, isDefender, attackTiles, defendTiles, -9999999, 9999999);
 		int bestMove[] = new int[4];
 		for (int i = 0; i < 4; i++) {
 			bestMove[i] = (int) move[i];
 		}
 		return bestMove;
 	}
+
+	private double heuristic(char[][] tiles){
+		double attackScore = 0;
+		double defendScore = 0;
+		for (int i = 0; i < tiles.length; i++){
+			for (int j = 0; j < tiles[i].length; j++){
+				if (tiles[i][j] == 'K'){
+					if ((i == 0 || i == 10) || (j == 0 || j == 10)){
+						defendScore += 1000;
+					}
+					if (tiles[i-1][j] == 'B'){
+						defendScore -= 25;
+					}
+					if (tiles[i+1][j] == 'B'){
+						defendScore -= 25;
+					}
+					if (tiles[i][j-1] == 'B'){
+						defendScore -= 25;
+					}
+					if (tiles[i][j+1] == 'B'){
+						defendScore -= 25;
+					}
+				}
+				else if (tiles[i][j] == 'W'){
+					defendScore += 5;
+					defendScore += Math.abs(5 - i) + Math.abs(5 - j);
+				}
+				else if (tiles[i][j] == 'B'){
+					attackScore += 5;
+					attackScore -= Math.abs(5 - i) + Math.abs(5 - j);
+				}
+			}
+		}
+		return defendScore - attackScore;
+	}
 	
 	private double[] negamaxab(char[][] tiles, int depth, boolean isDefender, ArrayList<Coordinate> attackTiles, ArrayList<Coordinate> defendTiles, double a, double b) {
 		if (depth == 0) {
-			double[] stateValue = {-1, -1, -1, -1, 1};
+			double value;
+			if(isDefender){
+				value = heuristic(tiles);
+			}
+			else{
+				value = -heuristic(tiles);
+			}
+			double[] stateValue = {-1, -1, -1, -1, value};
 			return stateValue;
 		}
-		double bestMove[] = {-1, -1, -1, -1, Double.MIN_VALUE};
+		double bestMove[] = {-1, -1, -1, -1, -9999999};
 		if (isDefender) {
 			for (int i = 0; i < defendTiles.size(); i++) {
 				Coordinate tile = defendTiles.get(i);
 				ArrayList<Coordinate> moves = getAvailableMoves(tiles, tile);
 				for (int j = 0; j < moves.size(); j++) {
 					//Copy board state so we can safely modify it
-					char[][] moveTiles = tiles.clone();
+					char[][] moveTiles = new char[11][11];
+					for (int k = 0; k < tiles.length; k++){
+						for (int l = 0; l < tiles[k].length; l++){
+							moveTiles[k][l] = tiles[k][l];
+						}
+					}
 					//Make the move
 					moveTiles[moves.get(j).getX()][moves.get(j).getY()] = moveTiles[tile.getX()][tile.getY()];
 					moveTiles[tile.getX()][tile.getY()] = ' ';
@@ -116,7 +165,12 @@ public class AI {
 				ArrayList<Coordinate> moves = getAvailableMoves(tiles, tile);
 				for (int j = 0; j < moves.size(); j++) {
 					//Copy board state so we can safely modify it
-					char[][] moveTiles = tiles.clone();
+					char[][] moveTiles = new char[11][11];
+					for (int k = 0; k < tiles.length; k++){
+						for (int l = 0; l < tiles[k].length; l++){
+							moveTiles[k][l] = tiles[k][l];
+						}
+					}
 					//Make the move
 					moveTiles[moves.get(j).getX()][moves.get(j).getY()] = moveTiles[tile.getX()][tile.getY()];
 					moveTiles[tile.getX()][tile.getY()] = ' ';
@@ -222,62 +276,7 @@ public class AI {
 	            break
 	    return bestValue, bestMove
 		*/
-	
-	private static double attackHeuristic(Tile[][] tiles) {
-		int aPieces = 0;
-		int dPieces = 0;
-		double aDistances = 0;
-		//Count number of attacking and defending pieces.
-		for (int i = 0; i < tiles.length; i++) {
-			for (int j = 0; j < tiles[i].length; j++) {
-				if (tiles[i][j].hasPiece()) {
-					if (tiles[i][j].getPiece().getColor().equals(Color.BLACK)) {
-						aPieces++;
-						//Add Manhattan distance of this piece from the center to aDistances
-						aDistances += Math.abs(5 - i) + Math.abs(5 - j);
-					}
-					else {
-						dPieces++;
-					}
-				}
-			}
-		}
-		//Divide distances by attacking pieces to get average distance from the center
-		aDistances /= aPieces;
-		//Divide aDistances by 10 so it becomes a decimal value, subtract from 1 so shorter distances are worth more.
-		aDistances = 1 - (aDistances / 10);
-		//Generate heuristic. Values before decimal place are how many more pieces attacker has on the board, while 
-		//the values decimal place are larger the closer the atttacker's pieces are to the center on average.
-		return (aPieces - dPieces) + aDistances;
-	}
-	
-	private static double defendHeuristic(Tile[][] tiles) {
-		int aPieces = 0;
-		int dPieces = 0;
-		double dDistances = 0;
-		//Count number of attacking and defending pieces.
-		for (int i = 0; i < tiles.length; i++) {
-			for (int j = 0; j < tiles[i].length; j++) {
-				if (tiles[i][j].hasPiece()) {
-					if (tiles[i][j].getPiece().getColor().equals(Color.BLACK)) {
-						aPieces++;
-					}
-					else {
-						dPieces++;
-						//Add Manhattan distance of this piece from the center to aDistances
-						dDistances += Math.abs(5 - i) + Math.abs(5 - j);
-					}
-				}
-			}
-		}
-		//Divide distances by defending pieces to get average distance from the center
-		dDistances /= dPieces;
-		//Divide aDistances by 10 so it becomes a decimal value.
-		dDistances /= 10;
-		//Generate heuristic. Values before decimal place are how many more pieces attacker has on the board, while 
-		//the values decimal place are larger the closer the atttacker's pieces are to the center on average.
-		return (dPieces - aPieces) + dDistances;
-	}
+
 	private HashSet<Coordinate> capture(char[][] tiles, Coordinate capturerTile) {
         HashSet<Coordinate> capturedTiles = new HashSet<Coordinate>();
         int x = capturerTile.getX();

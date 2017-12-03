@@ -36,11 +36,12 @@ public class AIClient extends Client implements MatchListener, InviteListener {
         	enemyID = match.getDefender();
         	isDefender = false;
         }
-        int move[] = AI.makeMove(match, AIid, isDefender);
+        AI ai = new AI(match, AIid, isDefender);
+        int move[] = ai.makeMove();
     	try {
             sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
         } catch (IOException e) {
-            logger.error("Error sending player move to server", e);
+            //logger.error("Error sending player move to server", e);
         }
     }
 
