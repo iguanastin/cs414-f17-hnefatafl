@@ -6,6 +6,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.stage.Stage;
 
+import java.text.DecimalFormat;
+
 public class ProfileController {
 
     public ListView<String> gameListView;
@@ -21,9 +23,11 @@ public class ProfileController {
         gameListView.getItems().clear();
         profile.getHistory().forEach(m -> gameListView.getItems().add(m.toString()));
 
-        ((Stage) gameListView.getScene().getWindow()).setTitle(profile.getName() + " - " + profile.getId());
+        ((Stage) gameListView.getScene().getWindow()).setTitle("Profile of: " + profile.getId().getName());
 
-        statsLabel.setText(profile.getHistory().size() + " games played with " + (profile.getWinrate()*100) + "% winrate");
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(2);
+        statsLabel.setText(profile.getHistory().size() + " games played with " + df.format(profile.getWinrate()*100) + "% winrate");
     }
 
 }

@@ -19,7 +19,7 @@ public class InviteReceivedEvent extends Event {
 
     @Override
     public String toString() {
-        return "Received invite from: " + getInvite().getSenderID();
+        return "Received invite from: " + getInvite().getSender();
     }
 
 }

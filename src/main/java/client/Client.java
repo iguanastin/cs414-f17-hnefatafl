@@ -24,7 +24,7 @@ import java.util.ArrayList;
 public class  Client extends AbstractClient {
 
     private boolean authenticated = false;
-    private int userID = -1;
+    private UserID userID = null;
     private String username = null;
 
     private final ArrayList<LoginListener> loginListeners = new ArrayList<>();
@@ -62,9 +62,13 @@ public class  Client extends AbstractClient {
      */
     @Override
     protected void handleMessageFromServer(Object msg) {
-        logger.info("[SERVER]: " + msg);
+        try {
+            logger.info("[SERVER]: " + msg);
 
-        if (msg instanceof Event) handleEventFromServer((Event) msg);
+            if (msg instanceof Event) handleEventFromServer((Event) msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -83,10 +87,9 @@ public class  Client extends AbstractClient {
         } else if (event instanceof LoginSuccessEvent) {
             LoginSuccessEvent lsEvent = (LoginSuccessEvent) event;
             userID = lsEvent.getId();
-            username = lsEvent.getUsername();
 
             //Notify login listeners
-            loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId(), lsEvent.getUsername()));
+            loginListeners.forEach(listener -> listener.loginSucceeded(lsEvent.getId()));
         }else if (event instanceof RegisterFailedEvent){
             RegisterFailedEvent rfEvent = (RegisterFailedEvent) event;
 
@@ -94,10 +97,9 @@ public class  Client extends AbstractClient {
             registerListeners.forEach(listener -> listener.registerFailed(rfEvent.getEmail(), rfEvent.getUsername(), rfEvent.getError()));
         }else if (event instanceof RegisterSuccessEvent){
             RegisterSuccessEvent rsEvent = (RegisterSuccessEvent) event;
-            userID = rsEvent.getId();
 
             //Notify login listeners
-            registerListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getUsername(), rsEvent.getPassword()));
+            registerListeners.forEach(listener -> listener.registerSucceeded(rsEvent.getEmail(),rsEvent.getId()));
         }else if (event instanceof MatchStartEvent) {
             matchListeners.forEach(listener -> listener.matchStarted(((MatchStartEvent) event).getMatch()));
         } else if (event instanceof MatchUpdateEvent) {
@@ -190,7 +192,7 @@ public class  Client extends AbstractClient {
      *
      * @return The ID of the currently connected user
      */
-    public int getUserID() {
+    public UserID getUserID() {
         return userID;
     }
 

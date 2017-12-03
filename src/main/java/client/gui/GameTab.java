@@ -4,12 +4,15 @@ import client.MoveListener;
 import client.game.PieceGUI;
 import client.game.PieceTypeGUI;
 import client.game.TileGUI;
+import common.UserID;
 import common.game.Match;
 import common.game.Piece;
 import common.game.Tile;
+import common.game.TileType;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Tab;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -18,6 +21,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,12 +30,24 @@ import java.util.Collections;
 
 public class GameTab extends Tab {
 
+    public static final Color KING_COLOR = Color.GOLD;
+    public static final Color ATTACKER_COLOR = Color.WHITE;
+    public static final Color DEFENDER_COLOR = Color.BLACK;
+
+    private static final String GRID_COLOR = "gray";
+    private static final String TILE_COLOR = "transparent";
+    private static final String TILE_COLOR_ALT = "darkgray";
+    private static final String TILE_COLOR_AVAILABLE = "yellow";
+    private static final String TILE_COLOR_THRONE = "orange";
+    private static final String TILE_COLOR_THRONE_AVAILABLE = "red";
+    private static final String TILE_COLOR_MOVEABLE = "green";
+
     private Match match;
     private GridPane grid;
 
     private final ArrayList<MoveListener> moveListeners = new ArrayList<>();
 
-    private final int userId;
+    private final UserID userId;
 
 
     /**
@@ -39,7 +56,7 @@ public class GameTab extends Tab {
      * @param title
      * @param userId
      */
-    public GameTab(String title, int userId) {
+    public GameTab(String title, UserID userId) {
         super(title);
         this.userId = userId;
 
@@ -56,7 +73,7 @@ public class GameTab extends Tab {
         grid.getRowConstraints().addAll(Collections.nCopies(11, new RowConstraints(50, 100, 1000, Priority.ALWAYS, VPos.CENTER, true)));
         setContent(grid);
 
-        grid.setStyle("-fx-background-color: gray;");
+        grid.setStyle("-fx-background-color: " + GRID_COLOR + ";");
     }
 
     /**
@@ -82,7 +99,7 @@ public class GameTab extends Tab {
      *
      * @return The id of the local user
      */
-    public int getUserId() {
+    public UserID getUserId() {
         return userId;
     }
 
@@ -95,12 +112,22 @@ public class GameTab extends Tab {
 
         for (int row = 0; row < tiles.length; row++) {
             for (int col = 0; col < tiles[0].length; col++) {
-                TileGUI tileGUI = initTileGUI(row, col);
+                TileGUI tileGUI = initTileGUI(tiles[col][row], row, col);
+
+                if ((col+row) % 2 == 0) tileGUI.setBackgroundColor(TILE_COLOR_ALT);
+
+                if (tiles[col][row].getType() == TileType.THRONE) {
+                    tileGUI.setBackgroundColor(TILE_COLOR_THRONE);
+                }
 
                 Piece piece = tiles[col][row].getPiece();
                 if (piece != null) {
-                    if (match.getCurrentPlayer() == getUserId() && piece.getUser() == getUserId()) {
-                        tileGUI.setBackgroundColor("yellow");
+                    if (match.getCurrentPlayer().equals(getUserId()) && piece.getUser().equals(getUserId())) {
+                        if (tiles[col][row].getType() == TileType.THRONE) {
+                            tileGUI.setBackgroundColor(TILE_COLOR_THRONE_AVAILABLE);
+                        } else {
+                            tileGUI.setBackgroundColor(TILE_COLOR_AVAILABLE);
+                        }
                     }
 
                     PieceGUI pieceGUI = initPieceGUI(row, col, piece);
@@ -122,23 +149,27 @@ public class GameTab extends Tab {
         PieceTypeGUI type = PieceTypeGUI.ATTACKER;
         if (piece.isKing()) {
             type = PieceTypeGUI.KING;
-        } else if (piece.getUser() == match.getDefender()) {
+        } else if (piece.getUser().equals(match.getDefender())) {
             type = PieceTypeGUI.DEFENDER;
         }
         PieceGUI pieceGUI = new PieceGUI(row, col, type);
         pieceGUI.setOnDragDetected(event -> {
-            if (match.getCurrentPlayer() == getUserId()) {
+            if (match.getCurrentPlayer().equals(getUserId())) {
                 //Start drag
                 Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
                 ClipboardContent cc = new ClipboardContent();
                 cc.putString(pieceGUI.toString());
                 db.setContent(cc);
+                SnapshotParameters p = new SnapshotParameters();
+                p.setFill(Color.TRANSPARENT);
+                db.setDragView(new Circle(25, pieceGUI.getCircle().getFill()).snapshot(p, null), 25, 25);
+                pieceGUI.getCircle().setFill(Color.TRANSPARENT);
 
                 final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
                 for (Node node : grid.getChildren()) {
                     if (node instanceof TileGUI) {
                         if (moves.contains(match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()])) {
-                            ((TileGUI) node).setBackgroundColor("green");
+                            ((TileGUI) node).setBackgroundColor(TILE_COLOR_MOVEABLE);
                         }
                     }
                 }
@@ -149,8 +180,17 @@ public class GameTab extends Tab {
         pieceGUI.setOnDragDone(event -> {
             for (Node node : grid.getChildren()) {
                 if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
-                    ((TileGUI) node).setBackgroundColor("transparent");
+                    ((TileGUI) node).setBackgroundColor(TILE_COLOR);
+                    if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0) ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
                 }
+            }
+
+            if (pieceGUI.getType() == PieceTypeGUI.ATTACKER) {
+                pieceGUI.getCircle().setFill(ATTACKER_COLOR);
+            } else if (pieceGUI.getType() == PieceTypeGUI.DEFENDER) {
+                pieceGUI.getCircle().setFill(DEFENDER_COLOR);
+            } if (pieceGUI.getType() == PieceTypeGUI.KING) {
+                pieceGUI.getCircle().setFill(KING_COLOR);
             }
         });
         return pieceGUI;
@@ -163,8 +203,8 @@ public class GameTab extends Tab {
      * @param col
      * @return
      */
-    private TileGUI initTileGUI(int row, int col) {
-        TileGUI tileGUI = new TileGUI(row, col);
+    private TileGUI initTileGUI(Tile tile, int row, int col) {
+        TileGUI tileGUI = new TileGUI(tile, row, col);
         tileGUI.setOnDragOver(event -> {
             if (event.getGestureSource() instanceof PieceGUI && !event.getGestureSource().equals(tileGUI.getPiece())) {
                 event.acceptTransferModes(TransferMode.ANY);

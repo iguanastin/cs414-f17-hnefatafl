@@ -1,6 +1,9 @@
 package server;
 
 
+import com.sun.istack.internal.NotNull;
+import common.UserID;
+
 import java.io.IOException;
 
 public class User {
@@ -11,11 +14,6 @@ public class User {
     private ConnectionToClient client = null;
 
     /**
-     * Users unique name
-     */
-    private final String name;
-
-    /**
      * Users password for login
      */
     private String password;
@@ -24,7 +22,7 @@ public class User {
     /**
      * Unique ID associated with this user
      */
-    private int id;
+    private UserID id;
 
     /**
      * Email for this user
@@ -44,9 +42,8 @@ public class User {
      * @param password Password for this account
      */
     public User(int id, String email, String name, String password) {
-        this.id = id;
+        this.id = new UserID(id, name);
         this.email = email;
-        this.name = name;
         this.password = password;
     }
 
@@ -73,14 +70,6 @@ public class User {
     public boolean comparePassword(String pass) {
         //TODO: Compare hashed and salted password instead of plaintext
         return this.password.equals(pass);
-    }
-
-    /**
-     *
-     * @return This user's unique name
-     */
-    public String getName() {
-        return name;
     }
 
     /**
@@ -151,9 +140,9 @@ public class User {
     @Override
     public String toString() {
         if (isLoggedIn()) {
-            return "[" + getId() + "-" + getName() + "-" + getClient() + "]";
+            return "[" + getId() + "-" + getClient() + "]";
         } else {
-            return "[" + getId() + "-" + getName() + "-Offline]";
+            return "[" + getId() + "-Offline]";
         }
     }
 
@@ -161,7 +150,7 @@ public class User {
      *
      * @return This user's unique ID
      */
-    public int getId() {
+    public UserID getId() {
         return id;
     }
 
@@ -204,10 +193,10 @@ public class User {
      */
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof User && id == ((User) obj).getId();
+        return obj instanceof User && id.equals(((User) obj).getId());
     }
     @Override
     public int hashCode() {
-    	return id;
+    	return getId().hashCode();
     }
 }

@@ -1,16 +1,18 @@
 package common.game;
 
+import common.UserID;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
 public class Match implements Serializable {
     private Board board;
-    private int attacker;
-    private int defender;
+    private UserID attacker;
+    private UserID defender;
     private MatchStatus status;
 
-    public Match(int attacker, int defender) {
+    public Match(UserID attacker, UserID defender) {
         this.attacker = attacker;
         this.defender = defender;
         status = MatchStatus.ATTACKER_TURN;
@@ -18,7 +20,7 @@ public class Match implements Serializable {
         board.initialize(attacker, defender);
     }
 
-    public Match(int attacker, int defender, MatchStatus status, String board) {
+    public Match(UserID attacker, UserID defender, MatchStatus status, String board) {
         this.attacker = attacker;
         this.defender = defender;
         this.board = new Board(11, 11);
@@ -32,11 +34,11 @@ public class Match implements Serializable {
             int i = (int) Math.floor((double) index / (double) this.board.getWidth());
             int j = index % this.board.getWidth();
 
-            int user = defender;
+            UserID user = defender;
             if (work[index].equals("1")) user = attacker;
 
             Color color = Color.BLACK;
-            if (user == attacker) color = Color.WHITE;
+            if (user.equals(attacker)) color = Color.WHITE;
 
             boolean isKing = work[index].equals("3");
 
@@ -51,11 +53,11 @@ public class Match implements Serializable {
         return board;
     }
 
-    public int getAttacker() {
+    public UserID getAttacker() {
         return attacker;
     }
 
-    public int getDefender() {
+    public UserID getDefender() {
         return defender;
     }
 
@@ -68,7 +70,7 @@ public class Match implements Serializable {
     }
 
     //Gets the player in control of this turn.
-    public int getCurrentPlayer() {
+    public UserID getCurrentPlayer() {
         if (status.equals(MatchStatus.ATTACKER_TURN)) {
             return attacker;
         } else {
@@ -315,11 +317,11 @@ public class Match implements Serializable {
         int y = capturerTile.getY();
         if (tiles[x][y - 1].hasPiece()) {
             //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
+            if (!(capturerTile.getPiece().getUser().equals(tiles[x][y - 1].getPiece().getUser()))) {
                 //Check if there a piece on the other side of that piece
                 if (tiles[x][y - 2].hasPiece()) {
                     //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x][y - 2].getPiece().getUser()) {
+                    if (capturerTile.getPiece().getUser().equals(tiles[x][y - 2].getPiece().getUser())) {
                         //Make sure that piece isn't a King
                         if (!(tiles[x][y - 2].getPiece().isKing())) {
                             return true;
@@ -343,11 +345,11 @@ public class Match implements Serializable {
         int y = capturerTile.getY();
         if (tiles[x][y + 1].hasPiece()) {
             //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
+            if (!(capturerTile.getPiece().getUser().equals(tiles[x][y + 1].getPiece().getUser()))) {
                 //Check if there a piece on the other side of that piece
                 if (tiles[x][y + 2].hasPiece()) {
                     //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x][y + 2].getPiece().getUser()) {
+                    if (capturerTile.getPiece().getUser().equals(tiles[x][y + 2].getPiece().getUser())) {
                         //Make sure that piece isn't a King
                         if (!(tiles[x][y + 2].getPiece().isKing())) {
                             return true;
@@ -371,11 +373,11 @@ public class Match implements Serializable {
         int y = capturerTile.getY();
         if (tiles[x - 1][y].hasPiece()) {
             //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
+            if (!(capturerTile.getPiece().getUser().equals(tiles[x - 1][y].getPiece().getUser()))) {
                 //Check if there a piece on the other side of that piece
                 if (tiles[x - 2][y].hasPiece()) {
                     //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x - 2][y].getPiece().getUser()) {
+                    if (capturerTile.getPiece().getUser().equals(tiles[x - 2][y].getPiece().getUser())) {
                         //Make sure that piece isn't a King
                         if (!(tiles[x - 2][y].getPiece().isKing())) {
                             return true;
@@ -399,11 +401,11 @@ public class Match implements Serializable {
         int y = capturerTile.getY();
         if (tiles[x + 1][y].hasPiece()) {
             //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
+            if (!(capturerTile.getPiece().getUser().equals(tiles[x + 1][y].getPiece().getUser()))) {
                 //Check if there a piece on the other side of that piece
                 if (tiles[x + 2][y].hasPiece()) {
                     //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x + 2][y].getPiece().getUser()) {
+                    if (capturerTile.getPiece().getUser().equals(tiles[x + 2][y].getPiece().getUser())) {
                         //Make sure that piece isn't a King
                         if (!(tiles[x + 2][y].getPiece().isKing())) {
                             return true;
@@ -461,7 +463,7 @@ public class Match implements Serializable {
         //Otherwise if a piece is there
         else if (tiles[x][y - 1].hasPiece()) {
             //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
+            if (!(kingTile.getPiece().getUser().equals(tiles[x][y - 1].getPiece().getUser()))) {
                 return true;
             }
         }
@@ -485,7 +487,7 @@ public class Match implements Serializable {
         //Otherwise if a piece is there
         else if (tiles[x][y + 1].hasPiece()) {
             //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
+            if (!(kingTile.getPiece().getUser().equals(tiles[x][y + 1].getPiece().getUser()))) {
                 return true;
             }
         }
@@ -509,7 +511,7 @@ public class Match implements Serializable {
         //Otherwise if a piece is there
         else if (tiles[x - 1][y].hasPiece()) {
             //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
+            if (!(kingTile.getPiece().getUser().equals(tiles[x - 1][y].getPiece().getUser()))) {
                 return true;
             }
         }
@@ -533,7 +535,7 @@ public class Match implements Serializable {
         //Otherwise if a piece is there
         else if (tiles[x + 1][y].hasPiece()) {
             //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
+            if (!(kingTile.getPiece().getUser().equals(tiles[x + 1][y].getPiece().getUser()))) {
                 return true;
             }
         }
@@ -542,13 +544,13 @@ public class Match implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof Match && ((Match) obj).getAttacker() == getAttacker() && ((Match) obj).getDefender() == getDefender();
+        return obj instanceof Match && ((Match) obj).getAttacker().equals(getAttacker()) && ((Match) obj).getDefender().equals(getDefender());
     }
 
     @Override
     public int hashCode() {
-        int hash = 17 * attacker;
-        hash = hash * 31 + defender;
+        int hash = 17 * attacker.getId();
+        hash = hash * 31 + defender.getId();
         return hash;
     }
 
@@ -562,9 +564,9 @@ public class Match implements Serializable {
                 Piece piece = getBoard().getTiles()[i][j].getPiece();
                 if (piece == null) {
                     sb.append("0");
-                } else if (piece.getUser() == getAttacker()) {
+                } else if (piece.getUser().equals(getAttacker())) {
                     sb.append("1");
-                } else if (piece.getUser() == getDefender()) {
+                } else if (piece.getUser().equals(getDefender())) {
                     if (piece.isKing()) {
                         sb.append("3");
                     } else {

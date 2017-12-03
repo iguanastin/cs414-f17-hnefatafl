@@ -2,6 +2,7 @@ package client.gui;
 
 import client.Client;
 import client.LoginListener;
+import common.UserID;
 import common.event.login.LoginRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -101,7 +102,7 @@ public class LoginController implements LoginListener {
     }
 
     @Override
-    public void loginSucceeded(int id, String name) {
+    public void loginSucceeded(UserID id) {
         Platform.runLater(() -> {
             Stage stage = new Stage();
             try {

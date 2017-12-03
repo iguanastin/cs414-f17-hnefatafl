@@ -5,34 +5,34 @@ import java.io.Serializable;
 
 public class Invitation implements Serializable {
 
-    private final int senderID, targetID;
+    private final UserID sender, target;
 
 
     /**
      * Constructs an invitation from a specified user to another
      *
-     * @param senderID
-     * @param targetID
+     * @param sender
+     * @param target
      */
-    public Invitation(int senderID, int targetID) {
-        this.senderID = senderID;
-        this.targetID = targetID;
+    public Invitation(UserID sender, UserID target) {
+        this.sender = sender;
+        this.target = target;
     }
 
     /**
      *
      * @return ID of the user who sent this invitation
      */
-    public int getSenderID() {
-        return senderID;
+    public UserID getSender() {
+        return sender;
     }
 
     /**
      *
      * @return ID of the user who is to receive this invitation
      */
-    public int getTargetID() {
-        return targetID;
+    public UserID getTarget() {
+        return target;
     }
 
 }

@@ -19,7 +19,7 @@ public class InviteAcceptedEvent extends Event {
 
     @Override
     public String toString() {
-        return "Invite accepted by user: " + invite.getTargetID();
+        return "Invite accepted by user: " + invite.getTarget();
     }
 
 }

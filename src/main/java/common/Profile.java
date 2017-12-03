@@ -9,8 +9,7 @@ import java.util.ArrayList;
 public class Profile implements Serializable {
 
     private final ArrayList<FinishedMatch> history;
-    private final int id;
-    private final String name;
+    private final UserID id;
 
 
     /**
@@ -18,12 +17,10 @@ public class Profile implements Serializable {
      *
      * @param history
      * @param id
-     * @param name
      */
-    public Profile(ArrayList<FinishedMatch> history, int id, String name) {
+    public Profile(ArrayList<FinishedMatch> history, UserID id) {
         this.history = history;
         this.id = id;
-        this.name = name;
     }
 
     /**
@@ -36,17 +33,9 @@ public class Profile implements Serializable {
 
     /**
      *
-     * @return The name of hte user whose profile this is
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     *
      * @return The id of the user whose profile this is
      */
-    public int getId() {
+    public UserID getId() {
         return id;
     }
 
@@ -59,7 +48,7 @@ public class Profile implements Serializable {
         int wins = 0, losses = 0;
 
         for (FinishedMatch m : history) {
-            if (m.getWinner() == id) {
+            if (m.getWinner().equals(id)) {
                 wins++;
             } else {
                 losses++;

@@ -3,6 +3,7 @@ package client.gui;
 
 import client.Client;
 import client.RegisterListener;
+import common.UserID;
 import common.event.login.RegisterRequestEvent;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -74,15 +75,17 @@ public class RegisterController implements RegisterListener {
     }
 
     private void closeRegisterWindow() {
-        if (client != null) client.removeRegisterListener(this);
-        Platform.runLater(() -> registerUsernameField.getScene().getWindow().hide());
+        Platform.runLater(() -> {
+            if (client != null) client.removeRegisterListener(this);
+            registerUsernameField.getScene().getWindow().hide();
+        });
     }
 
     @Override
-    public void registerSucceeded(String email, String name, String password){
+    public void registerSucceeded(String email, UserID id){
         Platform.runLater(() -> {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
-            a.setHeaderText("Register Succeeded for User: " + name);
+            a.setHeaderText("Register Succeeded for User: " + id);
             a.setTitle("Success");
             a.showAndWait();
         });

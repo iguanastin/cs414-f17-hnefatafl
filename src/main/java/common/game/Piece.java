@@ -1,20 +1,22 @@
 package common.game;
 
+import common.UserID;
+
 import java.io.Serializable;
 
 public class Piece implements Serializable {
     //Contains owner of piece
-    private int user;
+    private UserID user;
     private boolean isKing;
     private Color color;
 
-    public Piece(int user, Color color, boolean isKing) {
+    public Piece(UserID user, Color color, boolean isKing) {
         this.user = user;
         this.isKing = isKing;
         this.color = color;
     }
 
-    public int getUser() {
+    public UserID getUser() {
         return user;
     }
 

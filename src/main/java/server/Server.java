@@ -151,8 +151,8 @@ public class Server extends AbstractServer {
 
                 try {
                     PreparedStatement s = dbConnection.prepareStatement("INSERT INTO games (p1_id, p2_id, board) VALUES (?,?,?);");
-                    s.setInt(1, match.getAttacker());
-                    s.setInt(2, match.getDefender());
+                    s.setInt(1, match.getAttacker().getId());
+                    s.setInt(2, match.getDefender().getId());
                     s.setNString(3, match.toString());
 
                     s.executeUpdate();
@@ -175,14 +175,14 @@ public class Server extends AbstractServer {
      * @param p2id ID of a different user
      * @return Null if p1id==p2id or no match currently exists between the two users
      */
-    private Match getMatch(final int p1id, final int p2id) {
-        if (p1id == p2id) return null;
+    private Match getMatch(UserID p1id, UserID p2id) {
+        if (p1id.equals(p2id)) return null;
 
         synchronized (matches) {
             for (Match match : matches) {
-                final int a = match.getAttacker();
-                final int d = match.getDefender();
-                if ((a == p1id && d == p2id) || (a == p2id && d == p1id)) return match;
+                UserID a = match.getAttacker();
+                UserID d = match.getDefender();
+                if ((a.equals(p1id) && d.equals(p2id)) || (a.equals(p2id) && d.equals(p1id))) return match;
             }
         }
 
@@ -209,7 +209,7 @@ public class Server extends AbstractServer {
             while (rs.next()) {
                 MatchStatus status = MatchStatus.DEFENDER_TURN;
                 if (rs.getBoolean("p1_turn")) status = MatchStatus.ATTACKER_TURN;
-                matches.add(new Match(rs.getInt("p1_id"), rs.getInt("p2_id"), status, rs.getNString("board")));
+                matches.add(new Match(getUser(rs.getInt("p1_id")).getId(), getUser(rs.getInt("p2_id")).getId(), status, rs.getNString("board")));
             }
             s.close();
         } catch (SQLException e) {
@@ -225,11 +225,11 @@ public class Server extends AbstractServer {
     private void commitChangedUser(User user) {
         logger.info("Committing changed user: " + user);
         try (PreparedStatement s = dbConnection.prepareStatement("UPDATE users SET name=?, email=?, pass=?, deleted=? WHERE id=?;")) {
-            s.setNString(1, user.getName());
+            s.setNString(1, user.getId().getName());
             s.setNString(2, user.getEmail());
             s.setNString(3, user.getPassword());
             s.setBoolean(4, user.isUnregistered());
-            s.setInt(5, user.getId());
+            s.setInt(5, user.getId().getId());
             s.executeUpdate();
             s.close();
         } catch (SQLException e) {
@@ -350,9 +350,13 @@ public class Server extends AbstractServer {
      */
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-        logClient(client, msg);
+        try {
+            logClient(client, msg);
 
-        if (msg instanceof Event) handleEventFromClient((Event) msg, client);
+            if (msg instanceof Event) handleEventFromClient((Event) msg, client);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -397,7 +401,7 @@ public class Server extends AbstractServer {
                 }
             } else if (event instanceof QuitMatchEvent) {
                 int reason = FinishedMatch.ATTACKER_QUIT;
-                if (((QuitMatchEvent) event).getMatch().getDefender() == user.getId()) {
+                if (((QuitMatchEvent) event).getMatch().getDefender().equals(user.getId())) {
                     reason = FinishedMatch.DEFENDER_QUIT;
                 }
 
@@ -414,9 +418,9 @@ public class Server extends AbstractServer {
      */
     private void handleDeclineInviteEvent(DeclineInviteEvent event, User user) {
         try {
-            declineInvitation(getUser(event.getSenderID()), user);
+            declineInvitation(getUser(event.getSender().getId()), user);
         } catch (SQLException e) {
-            logger.error("Error declining invitation from user: " + event.getSenderID(), e);
+            logger.error("Error declining invitation from user: " + event.getSender(), e);
         }
     }
 
@@ -428,9 +432,9 @@ public class Server extends AbstractServer {
      */
     private void handleAcceptInviteEvent(AcceptInviteEvent event, User user) {
         try {
-            acceptInvitation(getUser(event.getSenderID()), user);
+            acceptInvitation(getUser(event.getSender().getId()), user);
         } catch (SQLException e) {
-            logger.error("Error accepting invitation from user: " + event.getSenderID(), e);
+            logger.error("Error accepting invitation from user: " + event.getSender(), e);
         }
     }
 
@@ -460,7 +464,7 @@ public class Server extends AbstractServer {
             boolean loginFalied = false;
 
             for (User u : users) {
-                if (u.getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)) {
+                if (u.getId().getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)) {
                     //Username or email is taken... Try again
                     //TODO: break this out into 2 errors
                     loginFalied = true;
@@ -484,7 +488,7 @@ public class Server extends AbstractServer {
                     if (user != null) {
                         user.setClient(client);
                         try {
-                            client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getName(), user.getPassword(), user.getId()));
+                            client.sendToClient(new RegisterSuccessEvent(user.getEmail(), user.getId()));
                         } catch (IOException e) {
                             logger.error("Error sending register success event", e);
                         }
@@ -514,7 +518,7 @@ public class Server extends AbstractServer {
         User user = null;
 
         for (User u : users) {
-            if (u.getName().equals(loginUserName)) {
+            if (u.getId().getName().equals(loginUserName)) {
                 if (u.isUnregistered()) {
                     try {
                         client.sendToClient(new LoginFailedEvent("This user is unregistered and cannot be used"));
@@ -545,7 +549,7 @@ public class Server extends AbstractServer {
             }
         } else {
             user.setClient(client);
-            user.send(new LoginSuccessEvent(user.getName(), user.getId()));
+            user.send(new LoginSuccessEvent(user.getId()));
         }
     }
 
@@ -561,7 +565,7 @@ public class Server extends AbstractServer {
         try {
             User target = getUser(event.getUsername());
             if (target != null) {
-                user.send(new SendProfileEvent(new Profile(getMatchHistory(target.getId()), target.getId(), target.getName())));
+                user.send(new SendProfileEvent(new Profile(getMatchHistory(target.getId()), target.getId())));
             } else {
                 user.send(new NoSuchUserEvent(event.getUsername()));
             }
@@ -578,7 +582,7 @@ public class Server extends AbstractServer {
      */
     private void handleRequestActiveInfoEvent(User user) {
         for (Match match : matches) {
-            if (match.getDefender() == user.getId() || match.getAttacker() == user.getId()) {
+            if (match.getDefender().equals(user.getId()) || match.getAttacker().equals(user.getId())) {
                 user.send(new MatchStartEvent(match));
             }
         }
@@ -618,10 +622,10 @@ public class Server extends AbstractServer {
      * @param user  The player that requested this move
      */
     private void handlePlayerMoveEvent(PlayerMoveEvent event, User user) {
-        Match match = getMatch(user.getId(), event.getEnemyId());
+        Match match = getMatch(user.getId(), event.getEnemy());
 
         if (match != null) {
-            if (match.getCurrentPlayer() == user.getId()) {
+            if (match.getCurrentPlayer().equals(user.getId())) {
                 if (!match.isValidMove(event.getFromX(), event.getFromY(), event.getToX(), event.getToY())) {
                     user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
                     return;
@@ -648,10 +652,10 @@ public class Server extends AbstractServer {
     private void saveMatchToDB(Match match) {
         try {
             PreparedStatement s = dbConnection.prepareStatement("UPDATE games SET p1_turn=?, board=? WHERE p1_id=? AND p2_id=?;");
-            s.setBoolean(1, match.getCurrentPlayer() == match.getAttacker());
+            s.setBoolean(1, match.getCurrentPlayer().equals(match.getAttacker()));
             s.setNString(2, match.toString());
-            s.setInt(3, match.getAttacker());
-            s.setInt(4, match.getDefender());
+            s.setInt(3, match.getAttacker().getId());
+            s.setInt(4, match.getDefender().getId());
             s.executeUpdate();
             s.close();
         } catch (SQLException e) {
@@ -665,12 +669,12 @@ public class Server extends AbstractServer {
      * @param match Match to notify users in
      */
     private void notifyMatchUpdate(Match match) {
-        User user = getUser(match.getAttacker());
+        User user = getUser(match.getAttacker().getId());
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchUpdateEvent(match));
         }
-        user = getUser(match.getDefender());
+        user = getUser(match.getDefender().getId());
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchUpdateEvent(match));
@@ -708,19 +712,19 @@ public class Server extends AbstractServer {
             matches.remove(match);
         }
 
-        int winner;
+        UserID winner;
         if (reason == FinishedMatch.ATTACKER_WIN || reason == FinishedMatch.DEFENDER_QUIT) {
             winner = match.getAttacker();
         } else {
             winner = match.getDefender();
         }
 
-        User user = getUser(match.getAttacker());
+        User user = getUser(match.getAttacker().getId());
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchFinishEvent(match));
         }
-        user = getUser(match.getDefender());
+        user = getUser(match.getDefender().getId());
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchFinishEvent(match));
@@ -728,8 +732,8 @@ public class Server extends AbstractServer {
 
         try {
             PreparedStatement s = dbConnection.prepareStatement("DELETE FROM games WHERE p1_id=? AND p2_id=?");
-            s.setInt(1, match.getAttacker());
-            s.setInt(2, match.getDefender());
+            s.setInt(1, match.getAttacker().getId());
+            s.setInt(2, match.getDefender().getId());
             s.executeUpdate();
             s.close();
         } catch (SQLException e) {
@@ -747,7 +751,7 @@ public class Server extends AbstractServer {
      * @param matchWinner   The id of the user who won
      * @return      An object representing the history of the match
      */
-    private FinishedMatch createMatchHistory(Match match, int matchResult, int matchWinner) {
+    private FinishedMatch createMatchHistory(Match match, int matchResult, UserID matchWinner) {
         try {
             PreparedStatement s = dbConnection.prepareStatement("INSERT INTO played(id, p1_id, p2_id, end_result, winner_id) VALUES (?,?,?,?,?);");
 
@@ -760,10 +764,10 @@ public class Server extends AbstractServer {
             id++;
 
             s.setInt(1, id);
-            s.setInt(2, match.getAttacker());
-            s.setInt(3, match.getDefender());
+            s.setInt(2, match.getAttacker().getId());
+            s.setInt(3, match.getDefender().getId());
             s.setInt(4, matchResult);
-            s.setInt(5, matchWinner);
+            s.setInt(5, matchWinner.getId());
 
             s.executeUpdate();
             s.close();
@@ -782,16 +786,16 @@ public class Server extends AbstractServer {
      * @return          A list of match history objects for the user
      * @throws SQLException     If the database throws an exception
      */
-    private ArrayList<FinishedMatch> getMatchHistory(int userID) throws SQLException {
+    private ArrayList<FinishedMatch> getMatchHistory(UserID userID) throws SQLException {
         ArrayList<FinishedMatch> matches = new ArrayList<>();
 
         PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM played WHERE p1_id=? OR p2_id=?");
-        s.setInt(1, userID);
-        s.setInt(2, userID);
+        s.setInt(1, userID.getId());
+        s.setInt(2, userID.getId());
 
         ResultSet rs = s.executeQuery();
         while (rs.next()) {
-            matches.add(new FinishedMatch(rs.getInt("id"), rs.getInt("p1_id"), rs.getInt("p2_id"), rs.getInt("winner_id"), rs.getInt("end_result")));
+            matches.add(new FinishedMatch(rs.getInt("id"), getUser(rs.getInt("p1_id")).getId(), getUser(rs.getInt("p2_id")).getId(), getUser(rs.getInt("winner_id")).getId(), rs.getInt("end_result")));
         }
 
         return matches;
@@ -809,18 +813,18 @@ public class Server extends AbstractServer {
         if (target.isUnregistered()) return null;
 
         PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE (p1_id=? AND p2_id=?) OR (p2_id=? AND p1_id=?)");
-        s.setInt(1, sender.getId());
-        s.setInt(2, target.getId());
-        s.setInt(3, sender.getId());
-        s.setInt(4, target.getId());
+        s.setInt(1, sender.getId().getId());
+        s.setInt(2, target.getId().getId());
+        s.setInt(3, sender.getId().getId());
+        s.setInt(4, target.getId().getId());
         ResultSet rs = s.executeQuery();
         if (rs.next()) return null;
         rs.close();
         s.close();
 
         s = dbConnection.prepareStatement("INSERT INTO invites(p1_id, p2_id) VALUES (?,?);");
-        s.setInt(1, sender.getId());
-        s.setInt(2, target.getId());
+        s.setInt(1, sender.getId().getId());
+        s.setInt(2, target.getId().getId());
         s.executeUpdate();
         s.close();
 
@@ -828,16 +832,6 @@ public class Server extends AbstractServer {
         if (target.isLoggedIn()) target.send(new InviteReceivedEvent(invite));
 
         return invite;
-    }
-
-    /**
-     * Declines an invitation and removes it from the system
-     *
-     * @param invite
-     * @throws SQLException
-     */
-    private void declineInvitation(Invitation invite) throws SQLException {
-        declineInvitation(getUser(invite.getSenderID()), getUser(invite.getTargetID()));
     }
 
     /**
@@ -862,8 +856,8 @@ public class Server extends AbstractServer {
      */
     private void deleteInvitation(User sender, User target) throws SQLException {
         PreparedStatement s = dbConnection.prepareStatement("DELETE FROM invites WHERE p1_id=? AND p2_id=?;");
-        s.setInt(1, sender.getId());
-        s.setInt(2, target.getId());
+        s.setInt(1, sender.getId().getId());
+        s.setInt(2, target.getId().getId());
         s.executeUpdate();
     }
 
@@ -893,10 +887,10 @@ public class Server extends AbstractServer {
 
         try {
             PreparedStatement s = dbConnection.prepareStatement("SELECT * FROM invites WHERE p2_id=?;");
-            s.setInt(1, target.getId());
+            s.setInt(1, target.getId().getId());
             ResultSet rs = s.executeQuery();
             while (rs.next()) {
-                invites.add(new Invitation(rs.getInt("p1_id"), rs.getInt("p2_id")));
+                invites.add(new Invitation(getUser(rs.getInt("p1_id")).getId(), getUser(rs.getInt("p2_id")).getId()));
             }
 
             return invites;
@@ -921,16 +915,16 @@ public class Server extends AbstractServer {
         user.getClient().close();
 
         for (Match match: matches) {
-            if (match.getAttacker() == user.getId()) {
+            if (match.getAttacker().equals(user.getId())) {
                 endMatch(match, FinishedMatch.ATTACKER_QUIT);
-            } else if (match.getDefender() == user.getId()) {
+            } else if (match.getDefender().equals(user.getId())) {
                 endMatch(match, FinishedMatch.DEFENDER_QUIT);
             }
         }
 
         ResultSet rs = dbConnection.prepareStatement("SELECT * FROM invites WHERE p1_id=? OR p2_id=?;").executeQuery();
         while (rs.next()) {
-            if (rs.getInt("p1_id") == user.getId()) {
+            if (getUser(rs.getInt("p1_id")).getId().equals(user.getId())) {
                 deleteInvitation(user, getUser(rs.getInt("p2_id")));
             } else {
                 declineInvitation(getUser(rs.getInt("p2_id")), user);
@@ -1008,7 +1002,7 @@ public class Server extends AbstractServer {
     private User getUser(ConnectionToClient client) {
         synchronized (users) {
             for (User user : users) {
-                if (user.getClient() == client) return user;
+                if (client.equals(user.getClient())) return user;
             }
         }
 
@@ -1024,7 +1018,7 @@ public class Server extends AbstractServer {
     private User getUser(int id) {
         synchronized (users) {
             for (User user : users) {
-                if (user.getId() == id) return user;
+                if (user.getId().getId() == id) return user;
             }
         }
 
@@ -1040,7 +1034,7 @@ public class Server extends AbstractServer {
     private User getUser(String name) {
         synchronized (users) {
             for (User user : users) {
-                if (user.getName().equalsIgnoreCase(name)) return user;
+                if (user.getId().getName().equalsIgnoreCase(name)) return user;
             }
         }
 
