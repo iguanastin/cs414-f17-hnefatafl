@@ -12,6 +12,7 @@ import java.io.IOException;
 import client.Client;
 import client.InviteListener;
 import client.MatchListener;
+import common.game.MatchStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,24 +35,21 @@ public class AIClient extends Client implements MatchListener, InviteListener {
 
     @Override
     public void matchUpdated(Match match) {
-        try {
-            int enemyID = match.getAttacker();
-            boolean isDefender = true;
-            if (enemyID == AIid) {
-                enemyID = match.getDefender();
-                isDefender = false;
-            }
+        int enemyID = match.getAttacker();
+        boolean isDefender = true;
+        if (enemyID == AIid) {
+            enemyID = match.getDefender();
+            isDefender = false;
+        }
+        if (isDefender && match.getStatus().equals(MatchStatus.DEFENDER_TURN) || (!(isDefender) && match.getStatus().equals(MatchStatus.ATTACKER_TURN)))
+        {
             AI ai = new AI(match, AIid, isDefender);
             int move[] = ai.makeMove();
-            System.out.println("3");
             try {
                 sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
             } catch (IOException e) {
                 logger.error("Error sending player move to server", e);
             }
-        }
-        catch (Exception e){
-            e.printStackTrace();
         }
     }
 

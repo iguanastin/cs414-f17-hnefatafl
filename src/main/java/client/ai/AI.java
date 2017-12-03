@@ -58,7 +58,6 @@ public class AI {
 	}
 	
 	public int[] makeMove() {
-		System.out.println("1");
 		//Copy the match's board so we can explore states without modifying the match
 		char[][] tiles = aiBoard.clone();
 		ArrayList<Coordinate> attackTiles = new ArrayList<Coordinate>(this.attackTiles);
@@ -70,7 +69,6 @@ public class AI {
 		for (int i = 0; i < 4; i++) {
 			bestMove[i] = (int) move[i];
 		}
-		System.out.println("2");
 		return bestMove;
 	}
 
@@ -83,18 +81,23 @@ public class AI {
 					if ((i == 0 || i == 10) || (j == 0 || j == 10)){
 						defendScore += 1000;
 					}
-					if (i != 0 && tiles[i-1][j] == 'B'){
-						defendScore -= 25;
+					if (i != 0){
+                        if(tiles[i-1][j] == 'B') defendScore -= 25;
+                        if(i-1 == 5 && j == 5) defendScore -= 25;
 					}
-					if (i != 10 && tiles[i+1][j] == 'B'){
-						defendScore -= 25;
+					if (i != 10){
+                        if(tiles[i+1][j] == 'B') defendScore -= 25;
+                        if(i+1 == 5 && j == 5) defendScore -= 25;
 					}
-					if (j != 0 && tiles[i][j-1] == 'B'){
-						defendScore -= 25;
+					if (j != 0){
+                        if(tiles[i][j-1] == 'B') defendScore -= 25;
+                        if(i == 5 && j-1 == 5) defendScore -= 25;
 					}
-					if (j != 10 && tiles[i][j+1] == 'B'){
-						defendScore -= 25;
+					if (j != 10){
+                        if(tiles[i][j+1] == 'B') defendScore -= 25;
+                        if(i == 5 && j+1 == 5) defendScore -= 25;
 					}
+                    defendScore += Math.abs(5 - i) + Math.abs(5 - j);
 				}
 				else if (tiles[i][j] == 'W'){
 					defendScore += 5;
