@@ -177,7 +177,7 @@ public class GameTab extends Tab {
                     ((TileGUI) node).setBackgroundColor(TILE_COLOR);
                     if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0)
                         ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
-                    if (((TileGUI) node).getTile().getType() == TileType.THRONE) ((TileGUI) node).setBackgroundColor(TILE_COLOR_THRONE);
+                    if (((TileGUI) node).getTile() != null && ((TileGUI) node).getTile().getType() == TileType.THRONE) ((TileGUI) node).setBackgroundColor(TILE_COLOR_THRONE);
                 }
             }
 
