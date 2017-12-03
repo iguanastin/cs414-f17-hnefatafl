@@ -1,23 +1,18 @@
 package client.game;
 
+import common.game.Tile;
 import javafx.scene.layout.BorderPane;
 
 public class TileGUI extends BorderPane {
 
+    private Tile tile;
     private PieceGUI piece;
     private int xCoord, yCoord;
 
     // Create a tile in the appropriate space, and set color to gray
-    public TileGUI(int x_coord, int y_coord) {
+    public TileGUI(Tile tile, int x_coord, int y_coord) {
         this.xCoord = x_coord;
         this.yCoord = y_coord;
-
-//        setWidth(GameGUIRunner.TILE_SIZE);
-//        setHeight(GameGUIRunner.TILE_SIZE);
-//
-//        relocate(x_coord * GameGUIRunner.TILE_SIZE,
-//                y_coord * GameGUIRunner.TILE_SIZE);
-//        setFill(Color.GRAY);
     }
 
     public boolean hasPiece() {
@@ -31,6 +26,14 @@ public class TileGUI extends BorderPane {
     public void setPiece(PieceGUI p) {
         piece = p;
         setCenter(p);
+    }
+
+    public Tile getTile() {
+        return tile;
+    }
+
+    public void setTile(Tile tile) {
+        this.tile = tile;
     }
 
     public int getyCoord() {

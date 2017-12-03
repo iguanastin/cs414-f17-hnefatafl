@@ -8,9 +8,11 @@ import common.UserID;
 import common.game.Match;
 import common.game.Piece;
 import common.game.Tile;
+import common.game.TileType;
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Tab;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
@@ -19,6 +21,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,12 +100,20 @@ public class GameTab extends Tab {
 
         for (int row = 0; row < tiles.length; row++) {
             for (int col = 0; col < tiles[0].length; col++) {
-                TileGUI tileGUI = initTileGUI(row, col);
+                TileGUI tileGUI = initTileGUI(tiles[col][row], row, col);
+
+                if (tiles[col][row].getType() == TileType.THRONE) {
+                    tileGUI.setBackgroundColor("red");
+                }
 
                 Piece piece = tiles[col][row].getPiece();
                 if (piece != null) {
                     if (match.getCurrentPlayer().equals(getUserId()) && piece.getUser().equals(getUserId())) {
-                        tileGUI.setBackgroundColor("yellow");
+                        if (tiles[col][row].getType() == TileType.THRONE) {
+                            tileGUI.setBackgroundColor("orange");
+                        } else {
+                            tileGUI.setBackgroundColor("yellow");
+                        }
                     }
 
                     PieceGUI pieceGUI = initPieceGUI(row, col, piece);
@@ -134,6 +146,9 @@ public class GameTab extends Tab {
                 ClipboardContent cc = new ClipboardContent();
                 cc.putString(pieceGUI.toString());
                 db.setContent(cc);
+                SnapshotParameters p = new SnapshotParameters();
+                p.setFill(Color.TRANSPARENT);
+                db.setDragView(new Circle(25, ((Circle) pieceGUI.getChildren().get(0)).getFill()).snapshot(p, null), 25, 25);
 
                 final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
                 for (Node node : grid.getChildren()) {
@@ -164,8 +179,8 @@ public class GameTab extends Tab {
      * @param col
      * @return
      */
-    private TileGUI initTileGUI(int row, int col) {
-        TileGUI tileGUI = new TileGUI(row, col);
+    private TileGUI initTileGUI(Tile tile, int row, int col) {
+        TileGUI tileGUI = new TileGUI(tile, row, col);
         tileGUI.setOnDragOver(event -> {
             if (event.getGestureSource() instanceof PieceGUI && !event.getGestureSource().equals(tileGUI.getPiece())) {
                 event.acceptTransferModes(TransferMode.ANY);
