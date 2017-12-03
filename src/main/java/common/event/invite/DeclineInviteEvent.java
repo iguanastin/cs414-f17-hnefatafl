@@ -1,24 +1,25 @@
 package common.event.invite;
 
 import common.Event;
+import common.UserID;
 
 
 public class DeclineInviteEvent extends Event {
 
-    private final int senderID;
+    private final UserID sender;
 
 
-    public DeclineInviteEvent(int senderID) {
-        this.senderID = senderID;
+    public DeclineInviteEvent(UserID sender) {
+        this.sender = sender;
     }
 
-    public int getSenderID() {
-        return senderID;
+    public UserID getSender() {
+        return sender;
     }
 
     @Override
     public String toString() {
-        return "Declining invite from: " + getSenderID();
+        return "Declining invite from: " + getSender();
     }
 
 }

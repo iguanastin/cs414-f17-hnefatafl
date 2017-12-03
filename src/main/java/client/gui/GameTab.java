@@ -4,6 +4,7 @@ import client.MoveListener;
 import client.game.PieceGUI;
 import client.game.PieceTypeGUI;
 import client.game.TileGUI;
+import common.UserID;
 import common.game.Match;
 import common.game.Piece;
 import common.game.Tile;
@@ -30,7 +31,7 @@ public class GameTab extends Tab {
 
     private final ArrayList<MoveListener> moveListeners = new ArrayList<>();
 
-    private final int userId;
+    private final UserID userId;
 
 
     /**
@@ -39,7 +40,7 @@ public class GameTab extends Tab {
      * @param title
      * @param userId
      */
-    public GameTab(String title, int userId) {
+    public GameTab(String title, UserID userId) {
         super(title);
         this.userId = userId;
 
@@ -82,7 +83,7 @@ public class GameTab extends Tab {
      *
      * @return The id of the local user
      */
-    public int getUserId() {
+    public UserID getUserId() {
         return userId;
     }
 
@@ -99,7 +100,7 @@ public class GameTab extends Tab {
 
                 Piece piece = tiles[col][row].getPiece();
                 if (piece != null) {
-                    if (match.getCurrentPlayer() == getUserId() && piece.getUser() == getUserId()) {
+                    if (match.getCurrentPlayer().equals(getUserId()) && piece.getUser().equals(getUserId())) {
                         tileGUI.setBackgroundColor("yellow");
                     }
 
@@ -122,12 +123,12 @@ public class GameTab extends Tab {
         PieceTypeGUI type = PieceTypeGUI.ATTACKER;
         if (piece.isKing()) {
             type = PieceTypeGUI.KING;
-        } else if (piece.getUser() == match.getDefender()) {
+        } else if (piece.getUser().equals(match.getDefender())) {
             type = PieceTypeGUI.DEFENDER;
         }
         PieceGUI pieceGUI = new PieceGUI(row, col, type);
         pieceGUI.setOnDragDetected(event -> {
-            if (match.getCurrentPlayer() == getUserId()) {
+            if (match.getCurrentPlayer().equals(getUserId())) {
                 //Start drag
                 Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
                 ClipboardContent cc = new ClipboardContent();

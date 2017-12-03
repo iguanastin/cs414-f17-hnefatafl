@@ -3,6 +3,7 @@ package client.gui;
 
 import client.*;
 import common.Invitation;
+import common.UserID;
 import common.event.invite.*;
 import common.event.login.UnregisterRequestEvent;
 import common.event.match.QuitMatchEvent;
@@ -28,13 +29,10 @@ import java.util.Collections;
 
 public class ClientController implements MatchListener, MoveListener, ServerUtilListener, InviteListener {
 
-    public ListView<String> invitesListView;
-    public ListView<String> gamesListView;
+    public ListView<UserID> invitesListView;
+    public ListView<UserID> gamesListView;
     public TextField usernameTextField;
     public TabPane tabPane;
-
-    private ContextMenu inviteListContextMenu;
-    private ContextMenu gamesListContextMenu;
 
     private Client client;
 
@@ -45,48 +43,47 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
     @FXML
     public void initialize() {
-        MenuItem[] items = new MenuItem[2];
-        items[0] = new MenuItem("Accept");
-        items[0].setOnAction(event -> {
-            try {
-                client.sendToServer(new AcceptInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
-                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
-            } catch (IOException e) {
-                logger.error("Error sending invite accept to server", e);
-            }
-        });
-        items[1] = new MenuItem("Decline");
-        items[1].setOnAction(event -> {
-            try {
-                client.sendToServer(new DeclineInviteEvent(Integer.parseInt(invitesListView.getSelectionModel().getSelectedItem())));
-                invitesListView.getItems().remove(invitesListView.getSelectionModel().getSelectedIndex());
-            } catch (IOException e) {
-                logger.error("Error sending invite accept to server", e);
-            }
-        });
-        inviteListContextMenu = new ContextMenu(items);
-        invitesListView.setOnContextMenuRequested(event -> inviteListContextMenu.show(invitesListView, event.getScreenX(), event.getScreenY()));
-
-        items = new MenuItem[1];
-        items[0] = new MenuItem("Leave");
-        items[0].setOnAction(event -> {
-            final String work = gamesListView.getSelectionModel().getSelectedItem();
-            final int attacker = Integer.parseInt(work.substring(0, work.indexOf('v')));
-            final int defender = Integer.parseInt(work.substring(work.indexOf('v') + 1));
-
-            for (GameTab tab : gameTabs) {
-                if (tab.getMatch().getAttacker() == attacker && tab.getMatch().getDefender() == defender) {
-                    try {
-                        client.sendToServer(new QuitMatchEvent(tab.getMatch()));
-                    } catch (IOException e) {
-                        logger.error("Error sending quit match request", e);
-                    }
-                    break;
+        invitesListView.setCellFactory((ListView<UserID> param) -> new InviteListCell(new InviteListCellListener() {
+            @Override
+            public void acceptClicked(UserID user) {
+                try {
+                    client.sendToServer(new AcceptInviteEvent(user));
+                    invitesListView.getItems().remove(user);
+                } catch (IOException e) {
+                    logger.error("Error sending invite accept to server", e);
                 }
             }
-        });
-        gamesListContextMenu = new ContextMenu(items);
-        gamesListView.setOnContextMenuRequested(event -> gamesListContextMenu.show(gamesListView, event.getScreenX(), event.getScreenY()));
+
+            @Override
+            public void declineClicked(UserID user) {
+                try {
+                    client.sendToServer(new DeclineInviteEvent(user));
+                    invitesListView.getItems().remove(user);
+                } catch (IOException e) {
+                    logger.error("Error sending invite accept to server", e);
+                }
+            }
+        }));
+
+        gamesListView.setCellFactory((ListView<UserID> param) -> new GameListCell(id -> {
+            try {
+                Match match = getMatch(client.getUserID(), id);
+                if (match == null) match = getMatch(id, client.getUserID());
+
+                client.sendToServer(new QuitMatchEvent(match));
+            } catch (IOException e) {
+                logger.error("Error sending quit match request", e);
+            }
+        }));
+    }
+
+    private Match getMatch(UserID attacker, UserID defender) {
+        for (GameTab tab : gameTabs) {
+            if (tab.getMatch().getAttacker().equals(attacker) && tab.getMatch().getDefender().equals(defender)) {
+                return tab.getMatch();
+            }
+        }
+        return null;
     }
 
     public void setClient(Client client) {
@@ -139,17 +136,17 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
     private void openGame(Match match) {
         Platform.runLater(() -> {
-            int enemyID = match.getAttacker();
-            if (match.getAttacker() == client.getUserID()) enemyID = match.getDefender();
+            UserID enemy = match.getAttacker();
+            if (match.getAttacker().equals(client.getUserID())) enemy = match.getDefender();
 
-            GameTab tab = new GameTab("Against: " + enemyID, client.getUserID());
+            GameTab tab = new GameTab("Against: " + enemy, client.getUserID());
             gameTabs.add(tab);
             tabPane.getTabs().add(tab);
 
             tab.setMatch(match);
             tab.addMoveListener(this);
 
-            gamesListView.getItems().add(match.getAttacker() + "v" + match.getDefender());
+            gamesListView.getItems().add(enemy);
         });
     }
 
@@ -159,16 +156,19 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
             for (GameTab tab : gameTabs) {
                 if (match.equals(tab.getMatch())) {
-                    tabPane.getTabs().remove(tab);
-                    tab.removeMoveListener(this);
                     toRemove = tab;
                     break;
                 }
             }
+            if (toRemove != null) {
+                gameTabs.remove(toRemove);
+                tabPane.getTabs().remove(toRemove);
+                toRemove.removeMoveListener(this);
+            }
 
-            if (toRemove != null) gameTabs.remove(toRemove);
-
-            gamesListView.getItems().remove(match.getAttacker() + "v" + match.getDefender());
+            UserID enemy = match.getAttacker();
+            if (client.getUserID().equals(enemy)) enemy = match.getDefender();
+            gamesListView.getItems().remove(enemy);
         });
     }
 
@@ -204,10 +204,10 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
 
     @Override
     public void playerRequestedMove(Match match, int fromRow, int fromCol, int toRow, int toCol) {
-        int enemyID = match.getAttacker();
-        if (enemyID == client.getUserID()) enemyID = match.getDefender();
+        UserID enemy = match.getAttacker();
+        if (enemy.equals(client.getUserID())) enemy = match.getDefender();
         try {
-            client.sendToServer(new PlayerMoveEvent(enemyID, fromRow, fromCol, toRow, toCol));
+            client.sendToServer(new PlayerMoveEvent(enemy, fromRow, fromCol, toRow, toCol));
         } catch (IOException e) {
             logger.error("Error sending player move to server", e);
         }
@@ -244,7 +244,7 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     @Override
     public void inviteReceived(Invitation invite) {
         Platform.runLater(() -> {
-            invitesListView.getItems().add(invite.getSenderID() + "");
+            invitesListView.getItems().add(invite.getSender());
         });
     }
 
@@ -253,7 +253,7 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
         Platform.runLater(() -> {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
             a.setTitle("Invitation declined");
-            a.setContentText("Invitation to " + invite.getTargetID() + " was declined");
+            a.setContentText("Invitation to " + invite.getTarget() + " was declined");
             a.showAndWait();
         });
     }

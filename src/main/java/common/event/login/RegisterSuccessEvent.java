@@ -2,33 +2,26 @@ package common.event.login;
 
 
 import common.Event;
+import common.UserID;
 
 public class RegisterSuccessEvent extends Event {
 
-    private final String email, username, password;
+    private final String email;
 
-    private final int id;
+    private final UserID id;
 
     /**
      * The event sent from the server to the client when the registration was sucessful
      * This tell the client they are good to go, and can start the login process
      * @param email
-     * @param username
-     * @param password
      * @param id
      */
-    public RegisterSuccessEvent(String email, String username, String password, int id) {
+    public RegisterSuccessEvent(String email, UserID id) {
         this.email = email;
-        this.username = username;
-        this.password = password;
         this.id = id;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public int getId() {
+    public UserID getId() {
         return id;
     }
 
@@ -36,13 +29,9 @@ public class RegisterSuccessEvent extends Event {
         return email;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     @Override
     public String toString() {
-        return "Registration succeeded for user: " + getId() + " - " + getUsername();
+        return "Registration succeeded for user: " + getId();
     }
 
 }

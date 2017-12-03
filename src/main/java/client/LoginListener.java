@@ -1,9 +1,11 @@
 package client;
 
 
+import common.UserID;
+
 public interface LoginListener {
 
-    void loginSucceeded(int id, String name);
+    void loginSucceeded(UserID id);
 
     void loginFailed(String name);
 }

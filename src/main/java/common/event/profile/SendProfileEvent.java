@@ -19,7 +19,7 @@ public class SendProfileEvent extends Event {
 
     @Override
     public String toString() {
-        return "Received profile for user: " + profile.getName();
+        return "Received profile for user: " + profile.getId();
     }
 
 }

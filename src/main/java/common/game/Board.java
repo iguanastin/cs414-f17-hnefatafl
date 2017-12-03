@@ -1,5 +1,7 @@
 package common.game;
 
+import common.UserID;
+
 import java.io.Serializable;
 
 public class Board implements Serializable {
@@ -41,7 +43,7 @@ public class Board implements Serializable {
      * @param attacker id of the attacker user
      * @param defender id of the defender user
      */
-    public void initialize(int attacker, int defender) {
+    public void initialize(UserID attacker, UserID defender) {
         if (width == 11 && height == 11) {
             //initialize tiles
             this.initializeTiles();
@@ -75,7 +77,7 @@ public class Board implements Serializable {
      *
      * @param attacker id of the attacker user
      */
-    public void initializeAttack(int attacker) {
+    public void initializeAttack(UserID attacker) {
         //initialize outer attackers
         for (int i = 3; i < 8; i++) {
             tiles[0][i].setPiece(new Piece(attacker, Color.BLACK, false));
@@ -94,7 +96,7 @@ public class Board implements Serializable {
      *
      * @param defender id of the defender user
      */
-    public void initializeDefense(int defender) {
+    public void initializeDefense(UserID defender) {
         //initialize outer defenders
         tiles[3][5].setPiece(new Piece(defender, Color.WHITE, false));
         tiles[7][5].setPiece(new Piece(defender, Color.WHITE, false));

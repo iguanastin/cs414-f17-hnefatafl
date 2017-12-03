@@ -1,5 +1,6 @@
 package server;
 
+import common.UserID;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -10,7 +11,7 @@ public class UserTest {
     @Test
     public void name() {
         User user = new User(1, "email","name", "pass");
-        assertEquals("name", user.getName());
+        assertEquals("name", user.getId().getName());
     }
 
     @Test
@@ -31,7 +32,7 @@ public class UserTest {
     @Test
     public void id() {
         User user = new User(1, "email","name", "pass");
-        assertEquals(1, user.getId());
+        assertEquals(new UserID(1, "name"), user.getId());
     }
 
     @Test

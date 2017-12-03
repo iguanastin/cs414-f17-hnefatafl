@@ -2,30 +2,24 @@ package common.event.login;
 
 
 import common.Event;
+import common.UserID;
 
 public class LoginSuccessEvent extends Event {
 
-    private final String username;
-
-    private final int id;
+    private final UserID id;
 
 
-    public LoginSuccessEvent(String username, int id) {
-        this.username = username;
+    public LoginSuccessEvent(UserID id) {
         this.id = id;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public int getId() {
+    public UserID getId() {
         return id;
     }
 
     @Override
     public String toString() {
-        return "Login succeeded for user: " + getId() + " - " + getUsername();
+        return "Login succeeded for user: " + getId();
     }
 
 }

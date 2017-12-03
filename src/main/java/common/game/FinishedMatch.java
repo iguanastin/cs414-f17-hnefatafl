@@ -1,6 +1,8 @@
 package common.game;
 
 
+import common.UserID;
+
 import java.io.Serializable;
 
 public class FinishedMatch implements Serializable {
@@ -10,10 +12,11 @@ public class FinishedMatch implements Serializable {
     public static final int ATTACKER_QUIT = 2;
     public static final int DEFENDER_QUIT = 3;
 
-    private final int id, winner, p1, p2, endState;
+    private final int id, winner, endState;
+    private final UserID p1, p2;
 
 
-    public FinishedMatch(int id, int p1, int p2, int winner, int endState) {
+    public FinishedMatch(int id, UserID p1, UserID p2, int winner, int endState) {
         this.id = id;
         this.p1 = p1;
         this.p2 = p2;
@@ -25,11 +28,11 @@ public class FinishedMatch implements Serializable {
         return id;
     }
 
-    public int getAttacker() {
+    public UserID getAttacker() {
         return p1;
     }
 
-    public int getDefender() {
+    public UserID getDefender() {
         return p2;
     }
 

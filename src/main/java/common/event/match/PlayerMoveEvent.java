@@ -2,22 +2,24 @@ package common.event.match;
 
 
 import common.Event;
+import common.UserID;
 
 public class PlayerMoveEvent extends Event {
 
-    private final int fromRow, fromCol, toRow, toCol, enemyId;
+    private final int fromRow, fromCol, toRow, toCol;
+    private final UserID enemy;
 
 
-    public PlayerMoveEvent(int enemyId, int fromRow, int fromCol, int toRow, int toCol) {
-        this.enemyId = enemyId;
+    public PlayerMoveEvent(UserID enemy, int fromRow, int fromCol, int toRow, int toCol) {
+        this.enemy = enemy;
         this.fromCol = fromCol;
         this.fromRow = fromRow;
         this.toCol = toCol;
         this.toRow = toRow;
     }
 
-    public int getEnemyId() {
-        return enemyId;
+    public UserID getEnemy() {
+        return enemy;
     }
 
     public int getFromY() {
@@ -38,7 +40,7 @@ public class PlayerMoveEvent extends Event {
 
     @Override
     public String toString() {
-        return "Player requesting move from [" + fromRow + "," + fromCol + "] to [" + toRow + "," + toCol + "] against " + enemyId;
+        return "Player requesting move from [" + fromRow + "," + fromCol + "] to [" + toRow + "," + toCol + "] against " + enemy;
     }
 
 }

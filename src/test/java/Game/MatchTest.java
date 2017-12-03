@@ -2,6 +2,7 @@ package Game;
 
 import java.util.ArrayList;
 
+import common.UserID;
 import common.game.*;
 import org.junit.*;
 
@@ -12,8 +13,8 @@ import static org.junit.Assert.assertTrue;
 public class MatchTest {
 
     private Match match;
-    private int attacker;
-    private int defender;
+    private UserID attacker;
+    private UserID defender;
     private Board board;
     private Tile[][] tiles;
 
@@ -32,8 +33,8 @@ public class MatchTest {
 
     @Before
     public void initialize() {
-        attacker = 1;
-        defender = 2;
+        attacker = new UserID(1, "1");
+        defender = new UserID(2, "2");
         match = new Match(attacker, defender);
         board = match.getBoard();
         tiles = board.getTiles();

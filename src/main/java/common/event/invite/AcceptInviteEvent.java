@@ -1,24 +1,25 @@
 package common.event.invite;
 
 import common.Event;
+import common.UserID;
 
 
 public class AcceptInviteEvent extends Event {
 
-    private final int senderID;
+    private final UserID sender;
 
 
-    public AcceptInviteEvent(int senderID) {
-        this.senderID = senderID;
+    public AcceptInviteEvent(UserID sender) {
+        this.sender = sender;
     }
 
-    public int getSenderID() {
-        return senderID;
+    public UserID getSender() {
+        return sender;
     }
 
     @Override
     public String toString() {
-        return "Accepting invite from: " + senderID;
+        return "Accepting invite from: " + sender;
     }
 
 }

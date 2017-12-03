@@ -1,5 +1,6 @@
 package Game;
 
+import common.UserID;
 import common.game.Board;
 import common.game.Tile;
 import common.game.TileType;
@@ -11,15 +12,15 @@ import static org.junit.Assert.assertTrue;
 
 public class BoardTest {
 
-	private int attacker;
-	private int defender;
+	private UserID attacker;
+	private UserID defender;
 	private Board board;
 
 
 	@Before
 	public void initialize() {
-		attacker = 1;
-		defender = 2;
+		attacker = new UserID(1, "1");
+		defender = new UserID(2, "2");
 		board = new Board(11, 11);
 	}
 
