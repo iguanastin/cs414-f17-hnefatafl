@@ -6,39 +6,63 @@ import java.util.Iterator;
 import common.game.*;
 
 public class AI {
+	private Match match;
+	private int AIid;
+	private boolean isDefender;
+	private char[][] aiBoard;
+	private ArrayList<Coordinate> attackTiles;
+	private ArrayList<Coordinate> defendTiles;
 	
-	public static int[] makeMove(Match match, int AIid, boolean isDefender) {
-		//Copy the match's board so we can explore states without modifying the match
-		Board board = new Board(11,11,match.getBoard().getTiles().clone());
-		Tile[][] tiles = board.getTiles();
-		//Sort pieces into lists for quicker move exploration
-		ArrayList<Tile> attackPieces = new ArrayList<Tile>();
-		ArrayList<Tile> defensePieces = new ArrayList<Tile>();
+	public AI(Match match, int AIid, boolean isDefender) {
+		this.match = match;
+		this.AIid = AIid;
+		this.isDefender = isDefender;
+		aiBoard = new char[11][11];
+		//Populate AI Board
+		Tile[][] tiles = match.getBoard().getTiles();
 		for (int i = 0; i < tiles.length; i++) {
-			for (int j = 0; j < tiles[i].length; j++) {
+			for (int j = 0; i < tiles.length; j++) {
 				if (tiles[i][j].hasPiece()) {
-					if (tiles[i][j].getPiece().getUser() == AIid) {
+					if (tiles[i][j].getPiece().isKing()) {
+						aiBoard[i][j] = 'K';
+						defendTiles.add(new Coordinate(i, j));
+					}
+					else if (tiles[i][j].getPiece().getUser() == AIid) {
 						if (isDefender) {
-							defensePieces.add(tiles[i][j]);
+							aiBoard[i][j] = 'W';
+							defendTiles.add(new Coordinate(i, j));
 						}
 						else {
-							attackPieces.add(tiles[i][j]);
+							aiBoard[i][j] = 'B';
+							attackTiles.add(new Coordinate(i, j));
 						}
 					}
 					else {
 						if (isDefender) {
-							attackPieces.add(tiles[i][j]);
+							aiBoard[i][j] = 'B';
+							attackTiles.add(new Coordinate(i, j));
 						}
 						else {
-							defensePieces.add(tiles[i][j]);
+							aiBoard[i][j] = 'W';
+							defendTiles.add(new Coordinate(i, j));
 						}
 					}
 				}
+				else {
+					aiBoard[i][j] = ' ';
+				}
 			}
 		}
+	}
+	
+	public int[] makeMove() {
+		//Copy the match's board so we can explore states without modifying the match
+		char[][] tiles = aiBoard.clone();
+		ArrayList<Coordinate> attackTiles = new ArrayList<Coordinate>(this.attackTiles);
+		ArrayList<Coordinate> defendTiles = new ArrayList<Coordinate>(this.defendTiles);
 		//Find the best move
 		double move[] = new double[5];
-		move = negamaxab(tiles, 3, AIid, isDefender, attackPieces, defensePieces, Double.MIN_VALUE, Double.MAX_VALUE);
+		move = negamaxab(tiles, 1, isDefender, attackTiles, defendTiles, -9999999, 9999999);
 		int bestMove[] = new int[4];
 		for (int i = 0; i < 4; i++) {
 			bestMove[i] = (int) move[i];
@@ -46,36 +70,29 @@ public class AI {
 		return bestMove;
 	}
 	
-	private static double[] negamaxab(Tile[][] tiles, int depth, int AIid, boolean isDefender, ArrayList<Tile> attackPieces, ArrayList<Tile> defensePieces, double a, double b) {
+	private double[] negamaxab(char[][] tiles, int depth, boolean isDefender, ArrayList<Coordinate> attackTiles, ArrayList<Coordinate> defendTiles, double a, double b) {
 		if (depth == 0) {
-			double value;
-			if (isDefender) {
-				value = defendHeuristic(tiles);
-			}
-			else {
-				value = attackHeuristic(tiles);
-			}
-			double[] stateValue = {-1, -1, -1, -1, value};
+			double[] stateValue = {-1, -1, -1, -1, 1};
 			return stateValue;
 		}
 		double bestMove[] = {-1, -1, -1, -1, Double.MIN_VALUE};
 		if (isDefender) {
-			for (int i = 0; i < defensePieces.size(); i++) {
-				Tile tile = defensePieces.get(i);
-				ArrayList<Tile> moves = getAvailableMoves(tiles, tile);
+			for (int i = 0; i < defendTiles.size(); i++) {
+				Coordinate tile = defendTiles.get(i);
+				ArrayList<Coordinate> moves = getAvailableMoves(tiles, tile);
 				for (int j = 0; j < moves.size(); j++) {
 					//Copy board state so we can safely modify it
-					Tile[][] moveTiles = tiles.clone();
+					char[][] moveTiles = tiles.clone();
 					//Make the move
-					moves.get(j).setPiece(tile.getPiece());
-					tile.removePiece();
-					HashSet<Tile> captured = capture(moveTiles, moves.get(j));
-					ArrayList<Tile> newAttack = new ArrayList<Tile>();
-					for (int k = 0; k < attackPieces.size(); k++) {
-						if (!(captured.contains(attackPieces.get(k)))) newAttack.add(attackPieces.get(k));
+					moveTiles[moves.get(j).getX()][moves.get(j).getY()] = moveTiles[tile.getX()][tile.getY()];
+					moveTiles[tile.getX()][tile.getY()] = ' ';
+					HashSet<Coordinate> captured = capture(moveTiles, moves.get(j));
+					ArrayList<Coordinate> newAttack = new ArrayList<Coordinate>();
+					for (int k = 0; k < attackTiles.size(); k++) {
+						if (!(captured.contains(attackTiles.get(k)))) newAttack.add(attackTiles.get(k));
 					}
 					//Explore the new move from other perspective
-					double[] move = negamaxab(moveTiles, depth-1, AIid, !(isDefender), newAttack, defensePieces, -b, -a);
+					double[] move = negamaxab(moveTiles, depth-1, !(isDefender), newAttack, defendTiles, -b, -a);
 					//Populate move data
 					move[0] = tile.getX();
 					move[1] = tile.getY();
@@ -94,22 +111,22 @@ public class AI {
 			}
 		}
 		else {
-			for (int i = 0; i < attackPieces.size(); i++) {
-				Tile tile = attackPieces.get(i);
-				ArrayList<Tile> moves = getAvailableMoves(tiles, tile);
+			for (int i = 0; i < attackTiles.size(); i++) {
+				Coordinate tile = attackTiles.get(i);
+				ArrayList<Coordinate> moves = getAvailableMoves(tiles, tile);
 				for (int j = 0; j < moves.size(); j++) {
 					//Copy board state so we can safely modify it
-					Tile[][] moveTiles = tiles.clone();
+					char[][] moveTiles = tiles.clone();
 					//Make the move
-					moves.get(j).setPiece(tile.getPiece());
-					tile.removePiece();
-					HashSet<Tile> captured = capture(moveTiles, moves.get(j));
-					ArrayList<Tile> newDefense = new ArrayList<Tile>();
-					for (int k = 0; k < defensePieces.size(); k++) {
-						if (!(captured.contains(defensePieces.get(k)))) newDefense.add(defensePieces.get(k));
+					moveTiles[moves.get(j).getX()][moves.get(j).getY()] = moveTiles[tile.getX()][tile.getY()];
+					moveTiles[tile.getX()][tile.getY()] = ' ';
+					HashSet<Coordinate> captured = capture(moveTiles, moves.get(j));
+					ArrayList<Coordinate> newDefend = new ArrayList<Coordinate>();
+					for (int k = 0; k < defendTiles.size(); k++) {
+						if (!(captured.contains(defendTiles.get(k)))) newDefend.add(defendTiles.get(k));
 					}
 					//Explore the new move from other perspective
-					double[] move = negamaxab(moveTiles, depth-1, AIid, !(isDefender), attackPieces, newDefense, -b, -a);
+					double[] move = negamaxab(moveTiles, depth-1, !(isDefender), attackTiles, newDefend, -b, -a);
 					//Populate move data
 					move[0] = tile.getX();
 					move[1] = tile.getY();
@@ -130,18 +147,16 @@ public class AI {
 		return bestMove;
 	}
 	
-	private static ArrayList<Tile> getAvailableMoves(Tile[][] tiles, Tile tile) {
-        ArrayList<Tile> availableMoves = new ArrayList<Tile>();
-        //Confirm tile has a piece on it
-        if (tile.hasPiece()) {
+	private static ArrayList<Coordinate> getAvailableMoves(char[][] tiles, Coordinate tile) {
+        ArrayList<Coordinate> availableMoves = new ArrayList<Coordinate>();
             int x = tile.getX();
             int y = tile.getY();
             //Check areas left of tile
             if (x != 0) {
                 for (int i = x - 1; i >= 0; i--) {
                     //Check if the tile has no piece on it and is not the throne
-                    if (!(tiles[i][y].hasPiece()) && !(tiles[i][y].getType().equals(TileType.THRONE)))
-                        availableMoves.add(tiles[i][y]);
+                    if (!(tiles[i][y] == 'K' || tiles[i][y] == 'W' || tiles[i][y] == 'B') && !(i == 5 && y == 5))
+                        availableMoves.add(new Coordinate(i, y));
                     else
                         break;
                 }
@@ -150,8 +165,8 @@ public class AI {
             if (x != 10) {
                 for (int i = x + 1; i <= 10; i++) {
                 	//Check if the tile has no piece on it and is not the throne
-                    if (!(tiles[i][y].hasPiece()) && !(tiles[i][y].getType().equals(TileType.THRONE)))
-                        availableMoves.add(tiles[i][y]);
+                	if (!(tiles[i][y] == 'K' || tiles[i][y] == 'W' || tiles[i][y] == 'B') && !(i == 5 && y == 5))
+                        availableMoves.add(new Coordinate(i, y));
                     else
                         break;
                 }
@@ -160,8 +175,8 @@ public class AI {
             if (y != 0) {
                 for (int i = y - 1; i >= 0; i--) {
                 	//Check if the tile has no piece on it and is not the throne
-                    if (!(tiles[x][i].hasPiece()) && !(tiles[x][i].getType().equals(TileType.THRONE)))
-                        availableMoves.add(tiles[x][i]);
+                	if (!(tiles[x][i] == 'K' || tiles[x][i] == 'W' || tiles[x][i] == 'B') && !(x == 5 && i == 5))
+                        availableMoves.add(new Coordinate(x, i));
                     else
                         break;
                 }
@@ -170,13 +185,13 @@ public class AI {
             if (y != 10) {
                 for (int i = y + 1; i <= 10; i++) {
                 	//Check if the tile has no piece on it and is not the throne
-                    if (!(tiles[x][i].hasPiece()) && !(tiles[x][i].getType().equals(TileType.THRONE)))
-                        availableMoves.add(tiles[x][i]);
+                	if (!(tiles[x][i] == 'K' || tiles[x][i] == 'W' || tiles[x][i] == 'B') && !(x == 5 && i == 5))
+                        availableMoves.add(new Coordinate(x, i));
                     else
                         break;
                 }
             }
-        }
+        
         return availableMoves;
     }
 		/*def negamaxab(game, depthLeft, a=-(sys.maxsize), b=sys.maxsize):
@@ -263,25 +278,25 @@ public class AI {
 		//the values decimal place are larger the closer the atttacker's pieces are to the center on average.
 		return (dPieces - aPieces) + dDistances;
 	}
-	private static HashSet<Tile> capture(Tile[][] tiles, Tile capturerTile) {
-        HashSet<Tile> capturedTiles = new HashSet<Tile>();
+	private HashSet<Coordinate> capture(char[][] tiles, Coordinate capturerTile) {
+        HashSet<Coordinate> capturedTiles = new HashSet<Coordinate>();
         int x = capturerTile.getX();
         int y = capturerTile.getY();
         //Capture top piece if capturable
         if (y > 1) {
            if (aboveCapturable(tiles, capturerTile)) {
         	   //If piece to be captured is a king
-               if (tiles[x][y - 1].getPiece().isKing()) {
+               if (tiles[x][y - 1] == 'K') {
             	   //kingCapture attempts to capture the king.
-            	   if (kingCapture(tiles, tiles[x][y - 1])) {
+            	   if (kingCapture(tiles, new Coordinate(x, y - 1))) {
             		   //If king was successfully captured
-                       capturedTiles.add(tiles[x][y - 1]);
+                       capturedTiles.add(new Coordinate(x, y - 1));
                    }
                }
                //Capture the piece
                else {
-            	   capturedTiles.add(tiles[x][y - 1]);
-                   tiles[x][y - 1].removePiece();
+            	   capturedTiles.add(new Coordinate(x, y - 1));
+                   tiles[x][y - 1] = ' ';
                }
            }
         }
@@ -289,141 +304,109 @@ public class AI {
         if (y < 9) {
             if (belowCapturable(tiles, capturerTile)) {
             	//If piece to be captured is a king
-                if (tiles[x][y + 1].getPiece().isKing()) {
-                	//kingCaptured attempts to capture the king.
-                    if (kingCapture(tiles, tiles[x][y + 1])) {
-                    	//If king was successfully captured
-                        capturedTiles.add(tiles[x][y + 1]);
+                if (tiles[x][y + 1] == 'K') {
+             	   //kingCapture attempts to capture the king.
+             	   if (kingCapture(tiles, new Coordinate(x, y + 1))) {
+             		   //If king was successfully captured
+                        capturedTiles.add(new Coordinate(x, y + 1));
                     }
                 }
                 //Capture the piece
                 else {
-                	capturedTiles.add(tiles[x][y + 1]);
-                    tiles[x][y + 1].removePiece();
+             	   capturedTiles.add(new Coordinate(x, y + 1));
+                    tiles[x][y + 1] = ' ';
                 }
             }
         }
         //Capture left piece if capturable
         if (x > 1) {
             if (leftCapturable(tiles, capturerTile)) {
-                //If piece to be captured is a king
-                if (tiles[x - 1][y].getPiece().isKing()) {
-                    //kingCaptured attempts to capture the king.
-                    if (kingCapture(tiles, tiles[x - 1][y])) {
-                        //If king was successfully captured
-                        capturedTiles.add(tiles[x - 1][y]);
+            	//If piece to be captured is a king
+                if (tiles[x - 1][y] == 'K') {
+             	   //kingCapture attempts to capture the king.
+             	   if (kingCapture(tiles, new Coordinate(x - 1, y))) {
+             		   //If king was successfully captured
+                        capturedTiles.add(new Coordinate(x - 1, y));
                     }
                 }
                 //Capture the piece
                 else {
-                    capturedTiles.add(tiles[x - 1][y]);
-                    tiles[x - 1][y].removePiece();
+             	   capturedTiles.add(new Coordinate(x - 1, y));
+                    tiles[x - 1][y] = ' ';
                 }
             }
         }
         //Capture right piece if capturable
         if (x < 9) {
             if(rightCapturable(tiles, capturerTile)) {
-                //If piece to be captured is a king
-                if (tiles[x + 1][y].getPiece().isKing()) {
-                	//kingCaptured attempts to capture the king.
-                    if (kingCapture(tiles, tiles[x + 1][y])) {
-                    	//If king was successfully captured
-                        capturedTiles.add(tiles[x + 1][y]);
+            	//If piece to be captured is a king
+                if (tiles[x + 1][y] == 'K') {
+             	   //kingCapture attempts to capture the king.
+             	   if (kingCapture(tiles, new Coordinate(x + 1, y))) {
+             		   //If king was successfully captured
+                        capturedTiles.add(new Coordinate(x + 1, y));
                     }
                 }
                 //Capture the piece
                 else {
-                	capturedTiles.add(tiles[x + 1][y]);
-                	tiles[x + 1][y].removePiece();
+             	   capturedTiles.add(new Coordinate(x + 1, y));
+                    tiles[x + 1][y] = ' ';
                 }
             }
         }
         return capturedTiles;
     }
-    private static boolean aboveCapturable(Tile[][] tiles, Tile capturerTile) {
+    private boolean aboveCapturable(char[][] tiles, Coordinate capturerTile) {
     	int x = capturerTile.getX();
     	int y = capturerTile.getY();
-    	if (tiles[x][y - 1].hasPiece()) {
-            //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
-                //Check if there a piece on the other side of that piece
-                if (tiles[x][y - 2].hasPiece()) {
-                    //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x][y - 2].getPiece().getUser()) {
-                        //Make sure that piece isn't a King
-                        if (!(tiles[x][y - 2].getPiece().isKing())) {
-                        	return true;
-                        }
-                    }
-                }
-            }
+    	//Check if there is a piece here, and if it belongs to the enemy.
+    	if (tiles[x][y - 1] != tiles[x][y] && tiles[x][y - 1] != ' ') {
+    		//Check if the piece on the other side belongs to this team and isn't the king
+    		if (tiles[x][y - 2] == tiles[x][y]) {
+    			return true;
+    		}
     	}
         return false;
     }
-    private static boolean belowCapturable(Tile[][] tiles, Tile capturerTile) {
+    private boolean belowCapturable(char[][] tiles, Coordinate capturerTile) {
     	int x = capturerTile.getX();
     	int y = capturerTile.getY();
-    	if (tiles[x][y + 1].hasPiece()) {
-            //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
-                //Check if there a piece on the other side of that piece
-                if (tiles[x][y + 2].hasPiece()) {
-                    //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x][y + 2].getPiece().getUser()) {
-                        //Make sure that piece isn't a King
-                        if (!(tiles[x][y + 2].getPiece().isKing())) {
-                        	return true;
-                        }
-                    }
-                }
-            }
+    	//Check if there is a piece here, and if it belongs to the enemy.
+    	if (tiles[x][y + 1] != tiles[x][y] && tiles[x][y + 1] != ' ') {
+    		//Check if the piece on the other side belongs to this team and isn't the king
+    		if (tiles[x][y + 2] == tiles[x][y]) {
+    			return true;
+    		}
     	}
         return false;
     }
-    private static boolean leftCapturable(Tile[][] tiles, Tile capturerTile) {
+    private boolean leftCapturable(char[][] tiles, Coordinate capturerTile) {
     	int x = capturerTile.getX();
     	int y = capturerTile.getY();
-    	if (tiles[x - 1][y].hasPiece()) {
-            //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
-                //Check if there a piece on the other side of that piece
-                if (tiles[x - 2][y].hasPiece()) {
-                    //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x - 2][y].getPiece().getUser()) {
-                        //Make sure that piece isn't a King
-                        if (!(tiles[x - 2][y].getPiece().isKing())) {
-                        	return true;
-                        }
-                    }
-                }
-            }
+    	//Check if there is a piece here, and if it belongs to the enemy.
+    	if (tiles[x - 1][y] != tiles[x][y] && tiles[x - 1][y] != ' ') {
+    		//Check if the piece on the other side belongs to this team and isn't the king
+    		if (tiles[x - 2][y] == tiles[x][y]) {
+    			return true;
+    		}
     	}
-    	return false;
+        return false;
     }
-    private static boolean rightCapturable(Tile[][] tiles, Tile capturerTile) {
+    private boolean rightCapturable(char[][] tiles, Coordinate capturerTile) {
     	int x = capturerTile.getX();
     	int y = capturerTile.getY();
-    	if (tiles[x + 1][y].hasPiece()) {
-            //Check if top piece belongs to the enemy
-            if (!(capturerTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
-                //Check if there a piece on the other side of that piece
-                if (tiles[x + 2][y].hasPiece()) {
-                    //Check if that piece belongs to the capturer
-                    if (capturerTile.getPiece().getUser() == tiles[x + 2][y].getPiece().getUser()) {
-                        //Make sure that piece isn't a King
-                        if (!(tiles[x + 2][y].getPiece().isKing())) {
-                        	return true;
-                        }
-                    }
-                }
-            }
+    	//Check if there is a piece here, and if it belongs to the enemy.
+    	if (tiles[x + 1][y] != tiles[x][y] && tiles[x + 1][y] != ' ') {
+    		//Check if the piece on the other side belongs to this team and isn't the king
+    		if (tiles[x + 2][y] == tiles[x][y]) {
+    			return true;
+    		}
     	}
-    	return false;
+        return false;
     }
 
     //Captures the king if surrounded.  Returns true is king was captured, false otherwise.
-    private static boolean kingCapture(Tile[][] tiles, Tile kingTile) {
+    private boolean kingCapture(char[][] tiles, Coordinate kingTile) {
         //If above, below, left, and right are all true, the king is surrounded and captured.
         boolean above = false;
         boolean below = false;
@@ -437,72 +420,60 @@ public class AI {
         if (x != 0)  left = kingCheckLeft(tiles, kingTile);
         if (x != 10) right = kingCheckRight(tiles, kingTile);
         if (above && below && left && right) {
-            kingTile.removePiece();
+            tiles[x][y] = ' ';
             return true;
         }
         return false;
     }
-    private static boolean kingCheckAbove(Tile[][] tiles, Tile kingTile) {
+    private boolean kingCheckAbove(char[][] tiles, Coordinate kingTile) {
     	int x = kingTile.getX();
     	int y = kingTile.getY();
     	//If it's the throne
-        if (tiles[x][y - 1].getType().equals(TileType.THRONE)) {
+        if (x == 5 && y == 5) {
             return true;
         }
         //Otherwise if a piece is there
-        else if (tiles[x][y - 1].hasPiece()) {
-            //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x][y - 1].getPiece().getUser())) {
-                return true;
-            }
+        else if (tiles[x][y - 1] == 'B') {
+            return true;
         }
         return false;
     }
-    private static boolean kingCheckBelow(Tile[][] tiles, Tile kingTile) {
+    private boolean kingCheckBelow(char[][] tiles, Coordinate kingTile) {
     	int x = kingTile.getX();
     	int y = kingTile.getY();
     	//If it's the throne
-        if (tiles[x][y + 1].getType().equals(TileType.THRONE)) {
+    	if (x == 5 && y == 5) {
             return true;
         }
-        //Otherwise if a piece is there
-        else if (tiles[x][y + 1].hasPiece()) {
-            //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x][y + 1].getPiece().getUser())) {
-                return true;
-            }
+    	//Otherwise if a piece is there
+        else if (tiles[x][y + 1] == 'B') {
+            return true;
         }
         return false;
     }
-    private static boolean kingCheckLeft(Tile[][] tiles, Tile kingTile) {
+    private static boolean kingCheckLeft(char[][] tiles, Coordinate kingTile) {
     	int x = kingTile.getX();
     	int y = kingTile.getY();
     	//If it's the throne
-        if (tiles[x - 1][y].getType().equals(TileType.THRONE)) {
+    	if (x == 5 && y == 5) {
             return true;
         }
-        //Otherwise if a piece is there
-        else if (tiles[x - 1][y].hasPiece()) {
-            //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x - 1][y].getPiece().getUser())) {
-                return true;
-            }
+    	 //Otherwise if a piece is there
+        else if (tiles[x - 1][y] == 'B') {
+            return true;
         }
         return false;
     }
-    private static boolean kingCheckRight(Tile[][] tiles, Tile kingTile) {
+    private static boolean kingCheckRight(char[][] tiles, Coordinate kingTile) {
     	int x = kingTile.getX();
     	int y = kingTile.getY();
     	//If it's the throne
-        if (tiles[x + 1][y].getType().equals(TileType.THRONE)) {
+    	if (x == 5 && y == 5) {
             return true;
         }
-        //Otherwise if a piece is there
-        else if (tiles[x + 1][y].hasPiece()) {
-            //Check if piece on tile belongs to the enemy
-            if (!(kingTile.getPiece().getUser() == tiles[x + 1][y].getPiece().getUser())) {
-                return true;
-            }
+    	 //Otherwise if a piece is there
+        else if (tiles[x + 1][y] == 'B') {
+            return true;
         }
         return false;
     }
