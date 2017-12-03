@@ -20,19 +20,19 @@ public class PlayerMoveEvent extends Event {
         return enemyId;
     }
 
-    public int getFromCol() {
+    public int getFromY() {
         return fromCol;
     }
 
-    public int getFromRow() {
+    public int getFromX() {
         return fromRow;
     }
 
-    public int getToCol() {
+    public int getToY() {
         return toCol;
     }
 
-    public int getToRow() {
+    public int getToX() {
         return toRow;
     }
 

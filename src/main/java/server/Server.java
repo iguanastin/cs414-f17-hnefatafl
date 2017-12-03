@@ -32,7 +32,7 @@ public class Server extends AbstractServer {
     /**
      * SQL Statement to create the games table
      */
-    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, end_result INT DEFAULT 0, winner_id INT DEFAULT 0, p1_turn BOOL DEFAULT TRUE, board_id INT, CONSTRAINT fk_p1g FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2g FOREIGN KEY (p2_id) REFERENCES users(id));";
+    private static final String CREATE_GAMES_TABLE = "CREATE TABLE games(p1_id INT, p2_id INT, p1_turn BOOL DEFAULT TRUE, board NVARCHAR(241), CONSTRAINT fk_p1g FOREIGN KEY (p1_id) REFERENCES users(id), CONSTRAINT fk_p2g FOREIGN KEY (p2_id) REFERENCES users(id));";
     /**
      * SQL Statement to create game history table
      */
@@ -149,6 +149,18 @@ public class Server extends AbstractServer {
                     }
                 }
 
+                try {
+                    PreparedStatement s = dbConnection.prepareStatement("INSERT INTO games (p1_id, p2_id, board) VALUES (?,?,?);");
+                    s.setInt(1, match.getAttacker());
+                    s.setInt(2, match.getDefender());
+                    s.setNString(3, match.toString());
+
+                    s.executeUpdate();
+                    s.close();
+                } catch (SQLException e) {
+                    logger.error("Error creating match in database", e);
+                }
+
                 return true;
             } else {
                 return false;
@@ -191,6 +203,13 @@ public class Server extends AbstractServer {
             ResultSet rs = s.executeQuery("SELECT * FROM users;");
             while (rs.next()) {
                 users.add(new User(rs.getInt("id"), rs.getNString("email"), rs.getNString("name"), rs.getNString("pass"), rs.getBoolean("deleted")));
+            }
+
+            rs = s.executeQuery("SELECT * FROM games;");
+            while (rs.next()) {
+                MatchStatus status = MatchStatus.DEFENDER_TURN;
+                if (rs.getBoolean("p1_turn")) status = MatchStatus.ATTACKER_TURN;
+                matches.add(new Match(rs.getInt("p1_id"), rs.getInt("p2_id"), status, rs.getNString("board")));
             }
             s.close();
         } catch (SQLException e) {
@@ -603,24 +622,40 @@ public class Server extends AbstractServer {
 
         if (match != null) {
             if (match.getCurrentPlayer() == user.getId()) {
-                if (!match.isValidMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol())) {
+                if (!match.isValidMove(event.getFromX(), event.getFromY(), event.getToX(), event.getToY())) {
                     user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.INVALID_MOVE));
                     return;
                 }
 
-                match.makeMove(event.getFromRow(), event.getFromCol(), event.getToRow(), event.getToCol());
+                match.makeMove(event.getFromX(), event.getFromY(), event.getToX(), event.getToY());
                 final boolean end = match.isOver();
                 if (!end) match.swapTurn();
 
                 notifyMatchUpdate(match);
                 if (end) {
                     endMatch(match);
+                } else {
+                    saveMatchToDB(match);
                 }
             } else {
                 user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NOT_YOUR_TURN));
             }
         } else {
             user.send(new PlayerMoveFailedEvent(PlayerMoveFailedReason.NO_MATCH));
+        }
+    }
+
+    private void saveMatchToDB(Match match) {
+        try {
+            PreparedStatement s = dbConnection.prepareStatement("UPDATE games SET p1_turn=?, board=? WHERE p1_id=? AND p2_id=?;");
+            s.setBoolean(1, match.getCurrentPlayer() == match.getAttacker());
+            s.setNString(2, match.toString());
+            s.setInt(3, match.getAttacker());
+            s.setInt(4, match.getDefender());
+            s.executeUpdate();
+            s.close();
+        } catch (SQLException e) {
+            logger.error("Error updating game in database", e);
         }
     }
 
@@ -689,6 +724,16 @@ public class Server extends AbstractServer {
         if (user != null && user.isLoggedIn()) {
             user.resetOutputStream();
             user.send(new MatchFinishEvent(match));
+        }
+
+        try {
+            PreparedStatement s = dbConnection.prepareStatement("DELETE FROM games WHERE p1_id=? AND p2_id=?");
+            s.setInt(1, match.getAttacker());
+            s.setInt(2, match.getDefender());
+            s.executeUpdate();
+            s.close();
+        } catch (SQLException e) {
+            logger.error("Error deleting match from database", e);
         }
 
         return createMatchHistory(match, reason, winner);
