@@ -12,11 +12,15 @@ import java.io.IOException;
 import client.Client;
 import client.InviteListener;
 import client.MatchListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class AIClient extends Client implements MatchListener, InviteListener {
 	//ID of the AI player
 	static int AIid = 33;
+
+    private final Logger logger = LoggerFactory.getLogger(Client.class);
 
     public AIClient(String host, int port) throws IOException {
         super(host, port);
@@ -30,18 +34,24 @@ public class AIClient extends Client implements MatchListener, InviteListener {
 
     @Override
     public void matchUpdated(Match match) {
-    	int enemyID = match.getAttacker();
-    	boolean isDefender = true;
-        if (enemyID == AIid) { 
-        	enemyID = match.getDefender();
-        	isDefender = false;
+        try {
+            int enemyID = match.getAttacker();
+            boolean isDefender = true;
+            if (enemyID == AIid) {
+                enemyID = match.getDefender();
+                isDefender = false;
+            }
+            AI ai = new AI(match, AIid, isDefender);
+            int move[] = ai.makeMove();
+            System.out.println("3");
+            try {
+                sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
+            } catch (IOException e) {
+                logger.error("Error sending player move to server", e);
+            }
         }
-        AI ai = new AI(match, AIid, isDefender);
-        int move[] = ai.makeMove();
-    	try {
-            sendToServer(new PlayerMoveEvent(enemyID, move[0], move[1], move[2], move[3]));
-        } catch (IOException e) {
-            //logger.error("Error sending player move to server", e);
+        catch (Exception e){
+            e.printStackTrace();
         }
     }
 
@@ -74,5 +84,12 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     public void inviteAccepted(Invitation invite) {
         //Shouldn't have to do anything
     }
-
+    @Override
+    protected void connectionException(Exception exception) {
+        try {
+            throw exception;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

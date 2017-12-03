@@ -62,9 +62,14 @@ public class  Client extends AbstractClient {
      */
     @Override
     protected void handleMessageFromServer(Object msg) {
-        logger.info("[SERVER]: " + msg);
+        try {
+            logger.info("[SERVER]: " + msg);
 
-        if (msg instanceof Event) handleEventFromServer((Event) msg);
+            if (msg instanceof Event) handleEventFromServer((Event) msg);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     /**

@@ -58,6 +58,7 @@ public class AI {
 	}
 	
 	public int[] makeMove() {
+		System.out.println("1");
 		//Copy the match's board so we can explore states without modifying the match
 		char[][] tiles = aiBoard.clone();
 		ArrayList<Coordinate> attackTiles = new ArrayList<Coordinate>(this.attackTiles);
@@ -69,6 +70,7 @@ public class AI {
 		for (int i = 0; i < 4; i++) {
 			bestMove[i] = (int) move[i];
 		}
+		System.out.println("2");
 		return bestMove;
 	}
 
@@ -81,16 +83,16 @@ public class AI {
 					if ((i == 0 || i == 10) || (j == 0 || j == 10)){
 						defendScore += 1000;
 					}
-					if (tiles[i-1][j] == 'B'){
+					if (i != 0 && tiles[i-1][j] == 'B'){
 						defendScore -= 25;
 					}
-					if (tiles[i+1][j] == 'B'){
+					if (i != 10 && tiles[i+1][j] == 'B'){
 						defendScore -= 25;
 					}
-					if (tiles[i][j-1] == 'B'){
+					if (j != 0 && tiles[i][j-1] == 'B'){
 						defendScore -= 25;
 					}
-					if (tiles[i][j+1] == 'B'){
+					if (j != 10 && tiles[i][j+1] == 'B'){
 						defendScore -= 25;
 					}
 				}
