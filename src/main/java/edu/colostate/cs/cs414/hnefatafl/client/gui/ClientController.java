@@ -253,7 +253,7 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
         Platform.runLater(() -> {
             Alert a = new Alert(Alert.AlertType.INFORMATION);
             a.setTitle("Invitation declined");
-            a.setContentText("Invitation to " + invite.getTarget() + " was declined");
+            a.setContentText("Invitation to " + invite.getTarget().getName() + " was declined");
             a.showAndWait();
         });
     }
@@ -261,6 +261,26 @@ public class ClientController implements MatchListener, MoveListener, ServerUtil
     @Override
     public void inviteAccepted(Invitation invite) {
 
+    }
+
+    @Override
+    public void inviteAlreadyExists(UserID id) {
+        Platform.runLater(() -> {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setTitle("Invitation already exists");
+            a.setContentText("There is currently a pending invite between you and " + id.getName());
+            a.showAndWait();
+        });
+    }
+
+    @Override
+    public void alreadyInMatch(UserID id) {
+        Platform.runLater(() -> {
+            Alert a = new Alert(Alert.AlertType.INFORMATION);
+            a.setTitle("Already in match");
+            a.setContentText("You are already in a match with " + id.getName());
+            a.showAndWait();
+        });
     }
 
     public void unregisterMenuItemOnAction(ActionEvent event) {

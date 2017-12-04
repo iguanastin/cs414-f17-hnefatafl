@@ -27,7 +27,7 @@ public class ProfileController {
 
         DecimalFormat df = new DecimalFormat();
         df.setMaximumFractionDigits(2);
-        statsLabel.setText(profile.getHistory().size() + " games played with " + df.format(profile.getWinrate()*100) + "% winrate");
+        statsLabel.setText(profile.getHistory().size() + " games played with " + df.format(profile.getWinrate()*100) + "% win rate");
     }
 
 }

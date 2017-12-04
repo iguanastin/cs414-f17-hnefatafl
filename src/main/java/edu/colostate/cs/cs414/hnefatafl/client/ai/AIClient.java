@@ -80,6 +80,17 @@ public class AIClient extends Client implements MatchListener, InviteListener {
     public void inviteAccepted(Invitation invite) {
         //Shouldn't have to do anything
     }
+
+    @Override
+    public void inviteAlreadyExists(UserID id) {
+        //Shouldn't have to do anything
+    }
+
+    @Override
+    public void alreadyInMatch(UserID id) {
+        //Shouldn't have to do anything
+    }
+
     @Override
     protected void connectionException(Exception exception) {
         try {

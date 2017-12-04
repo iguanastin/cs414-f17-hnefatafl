@@ -465,8 +465,6 @@ public class Server extends AbstractServer {
 
             for (User u : users) {
                 if (u.getId().getName().equalsIgnoreCase(registerUserName) || u.getEmail().equalsIgnoreCase(registerEmail)) {
-                    //Username or email is taken... Try again
-                    //TODO: break this out into 2 errors
                     loginFalied = true;
                     try {
                         client.sendToClient(new RegisterFailedEvent(registerEmail, registerUserName, "Username or email is already taken."));
@@ -492,8 +490,6 @@ public class Server extends AbstractServer {
                         } catch (IOException e) {
                             logger.error("Error sending register success event", e);
                         }
-                    } else {
-                        //TODO: Send error creating user
                     }
                 }
             }
@@ -523,11 +519,21 @@ public class Server extends AbstractServer {
                     try {
                         client.sendToClient(new LoginFailedEvent("This user is unregistered and cannot be used"));
                     } catch (IOException e) {
-                        logger.error("Error sending login failed even", e);
+                        logger.error("Error sending login failed event", e);
                     }
                 } else if (BCrypt.checkpw(loginPassword, u.getPassword())) {
                     //Password provided at login matches hashed password of user with the same name
-                    user = u;
+                    if (!u.isLoggedIn()) {
+                        user = u;
+                    } else {
+                        user = null;
+                        logger.error("Client tried to log in as someone who was already logged in");
+                        try {
+                            client.sendToClient(new LoginFailedEvent("This use is already logged in"));
+                        } catch (IOException e) {
+                            logger.error("Error sending login failed event", e);
+                        }
+                    }
                 } else {
                     //Password does not match. Tell the user
                     try {
@@ -548,6 +554,7 @@ public class Server extends AbstractServer {
                 logger.error("Error sending login failed event", e);
             }
         } else {
+            //Attach the client to the user
             user.setClient(client);
             user.send(new LoginSuccessEvent(user.getId()));
         }
@@ -603,12 +610,14 @@ public class Server extends AbstractServer {
         if (enemy != null && enemy != user) {
             if (getMatch(user.getId(), enemy.getId()) == null) {
                 try {
-                    inviteUser(user, enemy);
+                    if (inviteUser(user, enemy) == null) {
+                        user.send(new AlreadyInvitedEvent(enemy.getId()));
+                    }
                 } catch (SQLException e) {
-                    //TODO: Send error stating that the user has already been invited or has a pending invite for you
+                    logger.error("Error inviting user " + user + " -> " + enemy, e);
                 }
             } else {
-                //TODO Send error stating that a match already exists between these two users
+                user.send(new AlreadyInMatchEvent(enemy.getId()));
             }
         } else {
             user.send(new NoSuchUserEvent(event.getUsername()));

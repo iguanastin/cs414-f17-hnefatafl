@@ -1,6 +1,8 @@
 package edu.colostate.cs.cs414.hnefatafl.client.game;
 
+import edu.colostate.cs.cs414.hnefatafl.client.gui.GameTab;
 import edu.colostate.cs.cs414.hnefatafl.common.game.Tile;
+import edu.colostate.cs.cs414.hnefatafl.common.game.TileType;
 import javafx.scene.layout.BorderPane;
 
 public class TileGUI extends BorderPane {
@@ -13,6 +15,15 @@ public class TileGUI extends BorderPane {
     public TileGUI(Tile tile, int x_coord, int y_coord) {
         this.xCoord = x_coord;
         this.yCoord = y_coord;
+    }
+
+    public void resetColor() {
+        if (!hasPiece()) {
+            if ((xCoord+yCoord) % 2 == 0) setBackgroundColor(GameTab.TILE_COLOR_ALT);
+            else setBackgroundColor(GameTab.TILE_COLOR);
+
+            if (getTile() != null && getTile().getType() == TileType.THRONE) setBackgroundColor(GameTab.TILE_COLOR_THRONE);
+        }
     }
 
     public boolean hasPiece() {
