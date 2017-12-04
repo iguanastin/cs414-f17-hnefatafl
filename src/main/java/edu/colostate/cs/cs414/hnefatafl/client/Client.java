@@ -5,9 +5,7 @@ import edu.colostate.cs.cs414.hnefatafl.common.*;
 import edu.colostate.cs.cs414.hnefatafl.common.event.connection.ClientDisconnectEvent;
 import edu.colostate.cs.cs414.hnefatafl.common.event.connection.ConnectAcceptedEvent;
 import edu.colostate.cs.cs414.hnefatafl.common.event.connection.HeartbeatEvent;
-import edu.colostate.cs.cs414.hnefatafl.common.event.invite.InviteAcceptedEvent;
-import edu.colostate.cs.cs414.hnefatafl.common.event.invite.InviteDeclinedEvent;
-import edu.colostate.cs.cs414.hnefatafl.common.event.invite.InviteReceivedEvent;
+import edu.colostate.cs.cs414.hnefatafl.common.event.invite.*;
 import edu.colostate.cs.cs414.hnefatafl.common.event.login.*;
 import edu.colostate.cs.cs414.hnefatafl.common.event.match.MatchFinishEvent;
 import edu.colostate.cs.cs414.hnefatafl.common.event.match.MatchStartEvent;
@@ -118,6 +116,10 @@ public class  Client extends AbstractClient {
             inviteListeners.forEach(listener -> listener.inviteAccepted(((InviteAcceptedEvent) event).getInvite()));
         } else if (event instanceof InviteDeclinedEvent) {
             inviteListeners.forEach(listener -> listener.inviteDeclined(((InviteDeclinedEvent) event).getInvite()));
+        } else if (event instanceof AlreadyInMatchEvent) {
+            inviteListeners.forEach(listener -> listener.alreadyInMatch(((AlreadyInMatchEvent) event).getId()));
+        } else if (event instanceof AlreadyInvitedEvent) {
+            inviteListeners.forEach(listener -> listener.inviteAlreadyExists(((AlreadyInvitedEvent) event).getId()));
         }
     }
 
