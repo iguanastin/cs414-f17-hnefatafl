@@ -34,12 +34,12 @@ public class GameTab extends Tab {
     public static final Color ATTACKER_COLOR = Color.WHITE;
     public static final Color DEFENDER_COLOR = Color.BLACK;
 
-    private static final String GRID_COLOR = "#1380EC";
-    private static final String TILE_COLOR = "#1380EC";
-    private static final String TILE_COLOR_ALT = "#133CEC";
-    private static final String TILE_COLOR_AVAILABLE = "#EC1349";
-    private static final String TILE_COLOR_THRONE = "orange";
-    private static final String TILE_COLOR_MOVEABLE = "green";
+    public static final String GRID_COLOR = "#1380EC";
+    public static final String TILE_COLOR = "#1380EC";
+    public static final String TILE_COLOR_ALT = "#133CEC";
+    public static final String TILE_COLOR_AVAILABLE = "#EC1349";
+    public static final String TILE_COLOR_THRONE = "orange";
+    public static final String TILE_COLOR_MOVEABLE = "green";
 
     private Match match;
     private GridPane grid;
@@ -146,19 +146,25 @@ public class GameTab extends Tab {
         } else if (piece.getUser().equals(match.getDefender())) {
             type = PieceTypeGUI.DEFENDER;
         }
+
         PieceGUI pieceGUI = new PieceGUI(row, col, type);
         pieceGUI.setOnDragDetected(event -> {
             if (match.getCurrentPlayer().equals(getUserId())) {
-                //Start drag
+                //Create drag object and handle setup
                 Dragboard db = pieceGUI.startDragAndDrop(TransferMode.ANY);
                 ClipboardContent cc = new ClipboardContent();
                 cc.putString(pieceGUI.toString());
                 db.setContent(cc);
+
+                //Create drag image
                 SnapshotParameters p = new SnapshotParameters();
                 p.setFill(Color.TRANSPARENT);
                 db.setDragView(new Circle(25, pieceGUI.getCircle().getFill()).snapshot(p, null), 25, 25);
+
+                //Set actual piece transparent
                 pieceGUI.getCircle().setFill(Color.TRANSPARENT);
 
+                //Color available all moves
                 final ArrayList<Tile> moves = match.getAvaiableMoves(match.getBoard().getTiles()[pieceGUI.getyCoord()][pieceGUI.getxCoord()]);
                 for (Node node : grid.getChildren()) {
                     if (node instanceof TileGUI) {
@@ -171,30 +177,22 @@ public class GameTab extends Tab {
 
             event.consume();
         });
+
         pieceGUI.setOnDragDone(event -> {
+            //Reset colors
             for (Node node : grid.getChildren()) {
-                if (node instanceof TileGUI && !match.getBoard().getTiles()[((TileGUI) node).getyCoord()][((TileGUI) node).getxCoord()].hasPiece()) {
-                    ((TileGUI) node).setBackgroundColor(TILE_COLOR);
-                    if ((((TileGUI) node).getyCoord() + ((TileGUI) node).getxCoord()) % 2 == 0)
-                        ((TileGUI) node).setBackgroundColor(TILE_COLOR_ALT);
-                    if (((TileGUI) node).getTile() != null && ((TileGUI) node).getTile().getType() == TileType.THRONE) ((TileGUI) node).setBackgroundColor(TILE_COLOR_THRONE);
+                if (node instanceof TileGUI) {
+                    ((TileGUI) node).resetColor();
                 }
             }
-
-            if (pieceGUI.getType() == PieceTypeGUI.ATTACKER) {
-                pieceGUI.getCircle().setFill(ATTACKER_COLOR);
-            } else if (pieceGUI.getType() == PieceTypeGUI.DEFENDER) {
-                pieceGUI.getCircle().setFill(DEFENDER_COLOR);
-            }
-            if (pieceGUI.getType() == PieceTypeGUI.KING) {
-                pieceGUI.getCircle().setFill(KING_COLOR);
-            }
+            pieceGUI.resetColor();
         });
+
         return pieceGUI;
     }
 
     /**
-     * Factory method that creates a TileGUI for a given index
+     * Factory method that creates a TileGUI for a given index and tile
      *
      * @param row
      * @param col
@@ -213,6 +211,7 @@ public class GameTab extends Tab {
 
             moveListeners.forEach(listener -> listener.playerRequestedMove(match, piece.getyCoord(), piece.getxCoord(), tileGUI.getyCoord(), tileGUI.getxCoord()));
         });
+
         grid.add(tileGUI, col, row);
         return tileGUI;
     }

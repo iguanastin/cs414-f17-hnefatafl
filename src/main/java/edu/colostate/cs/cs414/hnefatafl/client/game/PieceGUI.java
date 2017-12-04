@@ -19,6 +19,11 @@ public class PieceGUI extends StackPane {
         this.yCoord = y_coord;
 
         circle = new Circle(TILE_SIZE * 0.3);
+        getChildren().add(circle);
+        resetColor();
+    }
+
+    public void resetColor() {
         switch(type) {
             case ATTACKER:
                 circle.setFill(GameTab.ATTACKER_COLOR);
@@ -32,7 +37,6 @@ public class PieceGUI extends StackPane {
                 circle.setFill(GameTab.KING_COLOR);
                 break;
         }
-        getChildren().add(circle);
     }
 
     public PieceTypeGUI getType() {
