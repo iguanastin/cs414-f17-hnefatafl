@@ -1,4 +1,4 @@
-package edu.colostate.cs.cs414.hnefatafl.client.game;
+package edu.colostate.cs.cs414.hnefatafl.client.gamegui;
 
 import edu.colostate.cs.cs414.hnefatafl.common.game.Tile;
 import javafx.scene.layout.BorderPane;

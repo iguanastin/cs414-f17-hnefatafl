@@ -1,9 +1,9 @@
 package edu.colostate.cs.cs414.hnefatafl.client.gui;
 
 import edu.colostate.cs.cs414.hnefatafl.client.MoveListener;
-import edu.colostate.cs.cs414.hnefatafl.client.game.PieceGUI;
-import edu.colostate.cs.cs414.hnefatafl.client.game.PieceTypeGUI;
-import edu.colostate.cs.cs414.hnefatafl.client.game.TileGUI;
+import edu.colostate.cs.cs414.hnefatafl.client.gamegui.PieceGUI;
+import edu.colostate.cs.cs414.hnefatafl.client.gamegui.PieceTypeGUI;
+import edu.colostate.cs.cs414.hnefatafl.client.gamegui.TileGUI;
 import edu.colostate.cs.cs414.hnefatafl.common.UserID;
 import edu.colostate.cs.cs414.hnefatafl.common.game.Match;
 import edu.colostate.cs.cs414.hnefatafl.common.game.Piece;
