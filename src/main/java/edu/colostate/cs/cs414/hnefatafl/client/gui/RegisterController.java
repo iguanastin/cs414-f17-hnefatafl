@@ -76,7 +76,14 @@ public class RegisterController implements RegisterListener {
 
     private void closeRegisterWindow() {
         Platform.runLater(() -> {
-            if (client != null) client.removeRegisterListener(this);
+            if (client != null) {
+                client.removeRegisterListener(this);
+                try {
+                    client.disconnect();
+                } catch (IOException e) {
+                    logger.error("Error disconnecting client", e);
+                }
+            }
             registerUsernameField.getScene().getWindow().hide();
         });
     }
